@@ -1,0 +1,173 @@
+#include "gpioHandle.h"
+
+
+gpioHandle::gpioHandle()
+{
+}
+
+gpioHandle::~gpioHandle()
+{
+}
+
+//exports pin and sets mode
+int gpioHandle::initializePin(const int pin, const int mode, const bool initialValue)
+{
+	ofstream exportPin;
+        exportPin.open("/sys/class/gpio/gpio” + pin);
+        if(!exportPin.is_open())
+        {
+                cout << "Error! \n";
+                return (-1);
+        }
+
+        exportPin <<  pin;
+        exportPin.close();
+	
+	ofstream pinMode;
+        pinMode.open("/sys/class/gpio/gpio” + pin + “/mode");
+        if(!pinMode.is_open())
+        {
+                cout << "Error! \n";
+                return (-1);
+        }
+	
+	if (PINMODE_OUT) {
+        pinMode <<  “out”;
+}
+else {
+if (PINMODE_IN) {
+       			pinMode <<  “in”;
+		}
+		else {
+			cout << “ERROR!!! \n”;
+			return (-1);
+		}
+}
+        pinMode.close();
+
+        cout << "Pin " << pin << " initialized to mode "; //debug only
+        switch(mode)
+        {
+        case(PINMODE_OUT):
+                cout << "OUTPUT";
+                break;
+        case(PINMODE_IN):
+                cout << "INPUT";
+                break;
+        default:
+                cout << "INVALID PINMODE";
+                break;
+        }
+        cout << " with an intial value of " << initialValue << endl;
+        return(0);
+}
+
+// changes pin mode
+int gpioHandle::setPinMode(const int pin, const int mode, const bool initialValue)
+{
+	ofstream pinMode;
+        pinMode.open("/sys/class/gpio/gpio” + pin + “/direction");
+        if(!pinMode.is_open())
+        {
+                cout << "Error! \n";
+                return (-1);
+        }
+
+if (PINMODE_OUT) {
+        pinMode <<  “out”;
+}
+else {
+if (PINMODE_IN) {
+       			pinMode <<  “in”;
+		}
+		else {
+			cout << “ERROR!!! \n”;
+			return (-1);
+		}
+}
+        pinMode.close();
+
+        cout << "Pin " << pin << " set to mode "; //debug only
+        switch(mode)
+        {
+        case(PINMODE_OUT):
+                cout << "OUTPUT";
+                break;
+        case(PINMODE_IN):
+                cout << "INPUT";
+                break;
+        default:
+                cout << "INVALID PINMODE";
+                break;
+        }
+        cout << " with an intial value of " << initialValue << endl;
+
+        return(0);
+}
+
+// retuns -1 when pin is unusable, else returns 0
+int gpioHandle::setPinVal(const int pin, const bool val)
+{
+	ofstream setVal;
+        setVal.open("/sys/class/gpio/gpio” + pin + “/value");
+        if(!setVal.is_open())
+        {
+                cout << "Error! \n";
+                return (-1);
+        }
+	else {
+		return(0);
+	}
+	setVal.close();
+
+        cout << "Pin " << pin << " set to " << val << endl;// debug only
+}
+
+// returns -1 when pin is unusable, else retuns value
+int gpioHandle::getPinVal(const int pin)
+{
+	ofstream getVal;
+        getVal.open("/sys/class/gpio/gpio” + pin + “/value");
+        if(!getVal.is_open())
+        {
+                cout << "Error! \n";
+                return (-1);
+        }
+	val = getVal >> value;
+	getVal.close();
+
+        return(val);
+}
+
+ // returns true if pin is usable
+bool gpioHandle::pinOpen(const int pin)
+{
+	ofstream usePin;
+        usePin.open("/sys/class/gpio/gpio” + pin);
+        if(usePin.is_open())
+        {
+                cout << "The pin " + pin + “ is usable!”;
+                return (true);
+        }
+	else {
+		cout << "The pin " + pin + “ is unusable!”;
+		return(false);
+	}
+	usePin.close();
+        cout << "Pin " << pin << " opened!" << endl; // debug only
+}
+
+// unexports pin
+void gpioHandle::pinClose(const int pin)
+{
+	unexportPin.open("/sys/class/gpio/gpio” + pin);
+        if(!unexportPin.is_open())
+        {
+		cout << "Error! \n";
+		return (-1);
+        }
+
+        unexportPin << pin;
+        unexportPin.close();
+        cout << "Pin " << pin << " closed!" << endl; // debug only
+}
