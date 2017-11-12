@@ -5,6 +5,7 @@
 //#include "gpioHandle.h"
 #include "commsInterface.h"
 #include "BME280.h"
+#include "BMX055_ACCEL.h"
 
 using namespace std;
 
@@ -22,7 +23,76 @@ int main(int argc, char* argv[])
 		return(1);
 	}
 
-	BME280 bme280Handle;
+	BMX055_A bmx055_Accel;
+
+	res = bmx055_Accel.initialize(&commsI);
+	if(res != 0)
+		cout << "BMX055 initialize error: (" << res << ')' << endl;
+
+	res = bmx055_Accel.setAccelRange(ACC_RANGE_4G);
+	if(res != 0)
+		cout << "BMX055 range set error: (" << res << ')' << endl;
+
+	res = bmx055_Accel.setAccelFilterBandwidth(ACC_F_BANDWIDTH_15_63HZ);
+	if(res != 0)
+		cout << "BMX055 bandwidth set error: (" << res << ')' << endl;
+
+	res = bmx055_Accel.setFIFOConfig(ACC_FIFO_FIFO | ACC_FIFODATA_XYZ);
+	if(res != 0)
+		cout << "BMX055 FIFO config set error: (" << res << ')' << endl;
+
+
+	while(true)
+	{
+		int fill = bmx055_Accel.getFIFOFillStatus();
+		if(fill == -1)
+			cout << "BMX055 FIFO fill get error: (" << res << ')' << endl;
+		int overrun = bmx055_Accel.getFIFOOverrunStatus();
+		if(overrun == -1)
+			cout << "BMX055 FIFO overrun get error: (" << res << ')' << endl;
+
+		//cout << fill;
+
+		//if(overrun > 0)
+		//	cout << " Overrun!";
+		//cout << endl;
+
+
+		if(fill > 16)
+		{
+			BMX055_A::accData tempData[2];
+			res = bmx055_Accel.getFIFOData(tempData, 2);
+			if(res == -1)
+				cout << "BMX055 FIFO data get error: (" << res << ')' << endl;
+
+			for(int i = 0; i < 2; i++)
+			{
+				cout << i << "\tX:" << tempData[i].XAxis << 'G'
+				<< "\tY:" << tempData[i].YAxis << 'G'
+				<< "\tZ:" << tempData[i].ZAxis << 'G' << endl;
+			}
+
+		}
+
+		//int temp = bmx055_Accel.getChipTemp();
+		//if(temp == -111)
+		//	cout << "BMX055 chip temperature error: (" << res << ')' << endl;
+
+		//cout << temp << 'C' << endl;
+
+		usleep(10000);
+	}
+
+
+
+
+	//res = bmx055_Accel.setDataOutputFormat(ACC_F_BANDWIDTH_31_25HZ);
+	//if(res != 0)
+	//	cout << "BMX055 output format set error: (" << res << ')' << endl;
+
+
+
+	/*BME280 bme280Handle;
 
 	res = bme280Handle.initialize(&commsI);
 	if(res != 0)
@@ -69,7 +139,7 @@ int main(int argc, char* argv[])
 		res = bme280Handle.takeMeasurement();
 		if(res != 0)
 			cout << "BME280 measurement error: (" << res << ')' << endl;
-	}
+	}*/
 
 	cout << "Success!" << endl;
 

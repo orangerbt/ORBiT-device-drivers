@@ -12,7 +12,6 @@ BME280::~BME280()
 	calibration = false;
 }
 
-
 int BME280::initialize(commsInterface *commsI)
 {
 	commsInt = commsI;
@@ -134,7 +133,7 @@ int BME280::getMeasurementResults()
 			return(res);
 	}
 
-	const int readStart = 0x88;
+	const int readStart = 0xF3;
 	unsigned char transBuf[1];
 	unsigned char readBuf[120];
 
@@ -203,6 +202,9 @@ int BME280::getMeasurementResults()
 	//	<< (lastPressure/256.0f) << "Pa\t"
 	//	<< (lastHumidity/1024.0f) << "%RH" << endl;
 	//cout << "---------------------------------------" << endl;
+
+	if((readBuf[0xF3 - readStart] & 0x09) != 0) // measurement had not completed
+		return(8);
 
 	return(0);
 }

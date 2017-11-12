@@ -1,3 +1,6 @@
+#ifndef BME280_HANDLE
+#define BME280_HANDLE
+
 #include <iostream>
 
 #include "commsInterface.h"
@@ -76,6 +79,9 @@ public:
 
 	int takeMeasurement();
 
+	//returns 0 when successful, or 7 if measurement was still in progress
+	//resutls are set to available data on chip
+	//Any other value is an error and results in no change in results
 	int getMeasurementResults();
 
 	float getLastHumidity(); //last measured humidity in %RH
@@ -84,7 +90,7 @@ public:
 
 private:
 
-	//seperate definition for a read/write cylce for costomizablity
+	//seperate definition for a read/write cylce for customizablity
 	int readWrite(const unsigned char *transBuf, const int transLen,
 			unsigned char *recBuf, const int recLen);
 
@@ -120,4 +126,4 @@ private:
 
 	commsInterface *commsInt;
 };
-
+#endif
