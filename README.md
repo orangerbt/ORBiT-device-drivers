@@ -9,36 +9,38 @@
 ## Currently Implemented
 
 * BME280 atmospheric chip
- - Barometric sensor
- - Humidity sensor
- - Temperature sensor
+ * Barometric sensor
+ * Humidity sensor
+ * Temperature sensor
 
 * BMX055 positional chip
- - Accelerometer module
+ * Accelerometer module
 
 ## TODO
 ### Add/Implement
 
 * BMX055
- - Gyroscopic module
- - Magnetometer module
- - Additional accelerometer functions
-  - Self test
+ * Gyroscopic module
+ * Magnetometer module
+ * Additional accelerometer functions
+  * Self test
 
 * GPIO handling
 
 ### Potential Features
 
 * BMX055
- - Additional accelerometer functions
-  - Power managment
-  - Interupt engines
-  - few-time non-volitile memory management
-  - digital interfaces(I2C/3wire SPI)
-  - offselts
-  - interupts
+ * Additional accelerometer functions
+  * Power managment
+  * Interupt engines
+  * few-time non-volitile memory management
+  * digital interfaces(I2C/3wire SPI)
+  * offselts
+  * interupts
 
 ### Refine
+
+* BME280
 
 ## Credits
 Cem Eden
