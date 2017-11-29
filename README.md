@@ -4,7 +4,7 @@
 	To provide interfaces with various spi devices on Beaglebone capes as well as GPIO capabilities.
 
 ## Current Version
-### Ver: 0.1
+### Ver: 0.11
 
 ## Currently Implemented
 
@@ -31,7 +31,6 @@
 
 * BMX055
   - Additional accelerometer functions
-    - Power managment
     - Interupt engines
     - few-time non-volitile memory management
     - digital interfaces(I2C/3wire SPI)
@@ -39,6 +38,10 @@
     - interupts
 
 ### Refine
+
+* BMX055
+  - Power managment
+
 
 * BME280
 

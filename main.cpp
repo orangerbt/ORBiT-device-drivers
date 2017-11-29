@@ -29,20 +29,41 @@ int main(int argc, char* argv[])
 	if(res != 0)
 		cout << "BMX055 initialize error: (" << res << ')' << endl;
 
+	if(argc > 1)
+	{
+		if(strcmp(argv[1], "-r") == 0)
+		{
+			cout << "reset chip!" << endl;
+			bmx055_Accel.reset();
+			return(0);
+		}
+	}
+
+
 	res = bmx055_Accel.setAccelRange(ACC_RANGE_4G);
 	if(res != 0)
 		cout << "BMX055 range set error: (" << res << ')' << endl;
 
-	res = bmx055_Accel.setAccelFilterBandwidth(ACC_F_BANDWIDTH_15_63HZ);
+	res = bmx055_Accel.setAccelFilterBandwidth(ACC_F_BANDWIDTH_125HZ);
 	if(res != 0)
 		cout << "BMX055 bandwidth set error: (" << res << ')' << endl;
 
+	res = bmx055_Accel.setLowPowerConfig(ACC_SLEEPTIMER_MODE | ACC_LOWPOWER_MODE2);
+	if(res != 0)
+		cout << "BMX055 lowpower set error: (" << res << ')' << endl;
+
 	res = bmx055_Accel.setFIFOConfig(ACC_FIFO_FIFO | ACC_FIFODATA_XYZ);
 	if(res != 0)
-		cout << "BMX055 FIFO config set error: (" << res << ')' << endl;
+		cout << "BMX055 FIFO config set 2 error: (" << res << ')' << endl;
+
+	res = bmx055_Accel.setPowermodeAndSleepDur(ACC_SLEEP_DUR_50MS | ACC_LOW_POWER);
+	if(res != 0)
+		cout << "BMX055 powermode set error: (" << res << ')' << endl;
 
 
-	while(true)
+	int tempCount = 0;
+	int lastFill = 0;
+	while(tempCount < 50)
 	{
 		int fill = bmx055_Accel.getFIFOFillStatus();
 		if(fill == -1)
@@ -51,22 +72,31 @@ int main(int argc, char* argv[])
 		if(overrun == -1)
 			cout << "BMX055 FIFO overrun get error: (" << res << ')' << endl;
 
-		//cout << fill;
-
-		//if(overrun > 0)
-		//	cout << " Overrun!";
-		//cout << endl;
-
-
-		if(fill > 16)
+		/*if(lastFill != fill)
 		{
-			BMX055_A::accData tempData[2];
-			res = bmx055_Accel.getFIFOData(tempData, 2);
+			cout << fill << ' ' << flush;
+
+			if(overrun > 0)
+				cout << "Overrun! ";
+		}
+		lastFill = fill;*/
+
+		if(fill >= 1)
+		{
+			//cout << endl;
+
+			if(fill > 10)
+				fill = 10;
+
+			BMX055_A::accData tempData[10];
+
+			res = bmx055_Accel.getFIFOData(tempData, fill);
 			if(res == -1)
 				cout << "BMX055 FIFO data get error: (" << res << ')' << endl;
 
-			for(int i = 0; i < 2; i++)
+			for(int i = 0; i < 1; i++)
 			{
+				//tempCount++;
 				cout << i << "\tX:" << tempData[i].XAxis << 'G'
 				<< "\tY:" << tempData[i].YAxis << 'G'
 				<< "\tZ:" << tempData[i].ZAxis << 'G' << endl;

@@ -41,6 +41,30 @@ using namespace std;
 #define ACC_FIFODATA_Y 0x02
 #define ACC_FIFODATA_Z 0x03
 
+//power mode
+#define ACC_SLEEP_DUR_0_5MS 0x0a
+#define ACC_SLEEP_DUR_1MS 0x0c
+#define ACC_SLEEP_DUR_2MS 0x0e
+#define ACC_SLEEP_DUR_4MS 0x10
+#define ACC_SLEEP_DUR_6MS 0x12
+#define ACC_SLEEP_DUR_10MS 0x14
+#define ACC_SLEEP_DUR_25MS 0x16
+#define ACC_SLEEP_DUR_50MS 0x18
+#define ACC_SLEEP_DUR_100MS 0x1a
+#define ACC_SLEEP_DUR_500MS 0x1c
+#define ACC_SLEEP_DUR_1S 0x1e
+
+#define ACC_NORMAL_POWER 0x00
+#define ACC_DEEP_SUS_POWER 0x20
+#define ACC_LOW_POWER 0x40
+#define ACC_SUSPEND_POWER 0x80
+
+//low power mode
+#define ACC_LOWPOWER_MODE1 0x00
+#define ACC_LOWPOWER_MODE2 0x40
+#define ACC_SLEEPTIMER_MODE 0x20
+#define ACC_NO_SLEEPTIMER_MODE 0x00
+
 class BMX055_A
 {
 public:
@@ -77,12 +101,16 @@ public:
 	int getChipTemp(); // returns -111 on error
 
 
+	//TODO refine check for invalid combinations
+	int setPowermodeAndSleepDur(const unsigned char config);
+	int setLowPowerConfig(const unsigned char config);
+
 
 	// soft reset chip
 	int reset();
 
 
-	//TODO Add power mode management
+	//TODO Refine power mode management
 	//TODO Add interupt engines
 	//TODO Add self test
 	//TODO Add control for the few-time non-volatile memory
@@ -90,6 +118,7 @@ public:
 	//TODO Add offsets
 	//TODO Add intterupts
 	//TODO Add getting offset values
+	//TODO Add direct data getting
 
 private:
         //seperate definition for a read/write cylce for customizablity
@@ -99,6 +128,7 @@ private:
 	commsInterface *commsInt;
 
 	int FIFOOutputFormat;
+	int lastPowerMode;
 	float GPerLSB;
 };
 #endif

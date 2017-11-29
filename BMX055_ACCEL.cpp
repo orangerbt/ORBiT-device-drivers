@@ -5,6 +5,7 @@ BMX055_A::BMX055_A()
 {
 	commsInt = nullptr;
 	FIFOOutputFormat = ACC_FIFODATA_XYZ;
+	lastPowerMode = ACC_NORMAL_POWER;
 	GPerLSB = 0.00098f; // set initial range to +- 2G
 }
 
@@ -30,6 +31,10 @@ int BMX055_A::initialize(commsInterface *commsI)
 	//identification is incorrect
 	if(readBuf[0] != 0xfa)
 		return(-1);
+
+	//res = reset();
+	//if(res != 0)
+	//	return(res);
 
 	return(0);
 }
@@ -316,6 +321,88 @@ int BMX055_A::getChipTemp()
 		return(-111);//error result much lower than lowest possible temperature
 
 	return((signed char)readBuf[0] + 23); // return result + offset
+}
+
+int BMX055_A::setPowermodeAndSleepDur(const unsigned char config)
+{
+
+	int nextPwrMode = config & 0xE0;
+	switch(lastPowerMode)
+	{
+	case(ACC_NORMAL_POWER):
+		break;
+	case(ACC_DEEP_SUS_POWER):
+		if(nextPwrMode != ACC_NORMAL_POWER)
+			return(-2);
+	case(ACC_LOW_POWER):
+		break; //TODO check which low power mode
+	case(ACC_SUSPEND_POWER):
+		break;
+	}
+
+	unsigned char transBuf[] = {(0b01111111 & 0x11),(unsigned char)(config & 0xFE)};
+
+	int res = readWrite(transBuf, 2, nullptr, 0);
+
+	if(res != 0)
+		return(res);
+
+	unsigned char readBuf[1];
+	readBuf[0] = 0;
+
+	transBuf[0] = (0b10000000 | 0x11);
+	res = readWrite(transBuf, 1, readBuf, sizeof(readBuf));
+	if(res != 0)
+		return(res);
+
+	if((readBuf[0] & 0xFE) != (config & 0xFE))
+		return(-1);
+
+	lastPowerMode = config & 0xE0;
+
+	return(0);
+}
+
+int BMX055_A::setLowPowerConfig(const unsigned char config)
+{
+
+	//int nextPwrMode = config & 0xE0;
+	switch(lastPowerMode)
+	{
+	case(ACC_NORMAL_POWER):
+		break;
+	case(ACC_DEEP_SUS_POWER):
+		if(config & 0x20 > 0)
+			return(-2);
+	case(ACC_LOW_POWER):
+		break; //TODO check which low power mode
+	case(ACC_SUSPEND_POWER):
+		if(config & 0x20 > 0)
+			return(-2);
+	}
+
+	unsigned char transBuf[] = {(0b01111111 & 0x12),(unsigned char)(config & 0x60)};
+
+	int res = readWrite(transBuf, 2, nullptr, 0);
+
+	if(res != 0)
+		return(res);
+
+	unsigned char readBuf[1];
+	readBuf[0] = 0;
+
+	transBuf[0] = (0b10000000 | 0x12);
+	res = readWrite(transBuf, 1, readBuf, sizeof(readBuf));
+	if(res != 0)
+		return(res);
+
+	if((readBuf[0] & 0x60) != (config & 0x60))
+		return(-1);
+
+	if(config & 0x20 > 0)
+		lastPowerMode = ACC_NORMAL_POWER;
+
+	return(0);
 }
 
 

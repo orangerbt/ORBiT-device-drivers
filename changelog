@@ -1,3 +1,6 @@
+### Version: 0.11: (2017-12-01)
+*ADD: Equidistant Sampleing mode
+
 ### Version: 0.1:  (2017-11-29)
 *DONE: BME280
 *ADD: BMX055 Accelerometer functions
