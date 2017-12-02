@@ -1,13 +1,6 @@
 #ifndef BMX055_A_HANDLE
 #define BMX055_A_HANDLE
 
-#include <iostream>
-#include <bitset>
-
-#include "commsInterface.h"
-
-using namespace std;
-
 //register constants
 //accelerometer range in +-g
 #define ACC_RANGE_2G 0x03

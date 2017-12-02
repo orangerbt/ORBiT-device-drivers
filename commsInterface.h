@@ -1,14 +1,10 @@
 #ifndef COMMS_INTERFACE
 #define COMMS_INTERFACE
 
-#include <iostream>
 #include <string>
-
 
 #include "spiHandle.h"
 #include "gpioHandle.h"
-
-using namespace std;
 
 class commsInterface: private gpioHandle, private spiHandle
 {
@@ -17,7 +13,7 @@ public:
 	commsInterface();
 	~commsInterface();
 
-	int initialize(const string devAddr,
+	int initialize(const std::string devAddr,
 			const int numberOfPins = 0,
 			const int *addressPinArray = nullptr,
 			const unsigned char bitsPerWord = 8,

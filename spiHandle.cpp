@@ -1,5 +1,15 @@
+#include <iostream>
+//#include <string> //included in header
+#include <fcntl.h>
+#include <sys/ioctl.h>
+#include <unistd.h>
+#include <linux/spi/spidev.h>
+#include <errno.h>
+#include <cstring> // for memset (do not use cstrings!)
 
 #include "spiHandle.h"
+
+using namespace std;
 
 spiHandle::spiHandle()
 {

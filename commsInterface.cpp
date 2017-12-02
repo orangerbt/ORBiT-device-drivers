@@ -1,6 +1,8 @@
+#include <iostream>
 
 #include "commsInterface.h"
 
+using namespace std;
 
 commsInterface::commsInterface()
 {

@@ -1,12 +1,6 @@
 #ifndef BME280_HANDLE
 #define BME280_HANDLE
 
-#include <iostream>
-
-#include "commsInterface.h"
-
-using namespace std;
-
 //*************** cntrl_meas constants ***************
 //mode constants
 #define SLEEP_MODE 0x00

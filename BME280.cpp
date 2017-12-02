@@ -1,4 +1,11 @@
+#include <iostream>
+
+#include "commsInterface.h"
+
 #include "BME280.h"
+
+using namespace std;
+
 
 BME280::BME280()
 {

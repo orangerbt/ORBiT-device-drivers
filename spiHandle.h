@@ -1,16 +1,7 @@
 #ifndef SPI_HANDLE
 #define SPI_HANDLE
 
-#include <iostream>
 #include <string>
-#include <fcntl.h>
-#include <sys/ioctl.h>
-#include <unistd.h>
-#include <linux/spi/spidev.h>
-#include <errno.h>
-#include <cstring> // for memset (do not use cstrings!)
-
-using namespace std;
 
 class spiHandle
 {
@@ -18,7 +9,7 @@ public:
 	spiHandle();
 	~spiHandle();
 
-	int initialize(const string devAddr,
+	int initialize(const std::string devAddr,
 			const unsigned char bitsPerWord = 8,
 			unsigned int speed = 1000000);
 
