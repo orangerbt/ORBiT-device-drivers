@@ -109,6 +109,11 @@ int gpioHandle::setPinMode(const int pin, const int mode, const bool initialValu
 	}
 	pinMode.close();
 
+	//int res = setPinVal(pin, initialValue);
+
+	//if(res != 0)
+	//	return(-1);
+
 #ifdef DEBUG
 	cout << "Pin " << pin << " set to mode ";
 	switch(mode)
@@ -141,7 +146,7 @@ int gpioHandle::setPinVal(const int pin, const bool val)
 		return (-1);
 	}
 	else {
-		return(0);
+		setVal << val;
 	}
 	setVal.close();
 

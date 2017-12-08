@@ -32,7 +32,10 @@ int main(int argc, char* argv[])
 
 	res = bmx055_Gyro.initialize(&commsI);
 	if(res != 0)
+	{
 		cout << "BMX055_G initialize error: (" << res << ')' << endl;
+		return(-1);
+	}
 
 	if(argc > 1)
 	{
@@ -78,19 +81,19 @@ int main(int argc, char* argv[])
 	{
 		int fill = bmx055_Gyro.getFIFOFillStatus();
 		if(fill == -1)
-			cout << "BMX055_G FIFO fill get error: (" << res << ')' << endl;
+			cout << "BMX055_G FIFO fill get error: (" << fill << ')' << endl;
 		int overrun = bmx055_Gyro.getFIFOOverrunStatus();
 		if(overrun == -1)
-			cout << "BMX055_G FIFO overrun get error: (" << res << ')' << endl;
+			cout << "BMX055_G FIFO overrun get error: (" << overrun << ')' << endl;
 
-		/*if(lastFill != fill | overrun > 0)
-		{
-			cout << fill << ' ' << flush;
+		//if(lastFill != fill | overrun > 0)
+		//{
+		//	cout << fill << ' ' << flush;
 
-			if(overrun > 0)
-				cout << "Overrun! ";
-		}
-		lastFill = fill;*/
+		//	if(overrun > 0)
+		//		cout << "Overrun! ";
+		//}
+		//lastFill = fill;
 
 		if(fill >= 1)
 		{
@@ -123,7 +126,7 @@ int main(int argc, char* argv[])
 				//	<< "\tY:" << deltaY << "deg"
 				//	<< "\tZ:" << deltaZ << "deg" << endl;
 
-				//tempCount++;
+				tempCount++;
 				cout << i << "\tX:" << tempData[i].XAxis << "deg/s"
 					<< "\tY:" << tempData[i].YAxis << "deg/s"
 					<< "\tZ:" << tempData[i].ZAxis << "deg/s" << endl;
@@ -140,15 +143,17 @@ int main(int argc, char* argv[])
 		usleep(10000);
 	}
 
-	/*BMX055_A bmx055_Accel;
+	BMX055_A bmx055_Accel;
 
 	res = bmx055_Accel.initialize(&commsI);
 	if(res != 0)
+	{
 		cout << "BMX055_A initialize error: (" << res << ')' << endl;
-
-	res = bmx055_Gyro.initialize(&commsI);
-	if(res != 0)
-		cout << "BMX055_G initialize error: (" << res << ')' << endl;
+		return(-1);
+	}
+	//res = bmx055_Gyro.initialize(&commsI);
+	//if(res != 0)
+	//	cout << "BMX055_G initialize error: (" << res << ')' << endl;
 
 	if(argc > 1)
 	{
@@ -181,8 +186,8 @@ int main(int argc, char* argv[])
 		cout << "BMX055_A powermode set error: (" << res << ')' << endl;
 
 
-	int tempCount = 0;
-	int lastFill = 0;
+	tempCount = 0;
+	lastFill = 0;
 	while(tempCount < 50)
 	{
 		int fill = bmx055_Accel.getFIFOFillStatus();
@@ -216,7 +221,7 @@ int main(int argc, char* argv[])
 
 			for(int i = 0; i < 1; i++)
 			{
-				//tempCount++;
+				tempCount++;
 				cout << i << "\tX:" << tempData[i].XAxis << 'G'
 				<< "\tY:" << tempData[i].YAxis << 'G'
 				<< "\tZ:" << tempData[i].ZAxis << 'G' << endl;
@@ -231,7 +236,7 @@ int main(int argc, char* argv[])
 		//cout << temp << 'C' << endl;
 
 		usleep(10000);
-	}*/
+	}
 
 
 
@@ -242,11 +247,14 @@ int main(int argc, char* argv[])
 
 
 
-	/*BME280 bme280Handle;
+	BME280 bme280Handle;
 
 	res = bme280Handle.initialize(&commsI);
 	if(res != 0)
+	{
 		cout << "BME280 initialize error: (" << res << ')' << endl;
+		return(-1);
+	}
 
 	if(argc > 1)
 	{
@@ -274,7 +282,8 @@ int main(int argc, char* argv[])
 
 	cout << "started measurements:" << endl;
 
-	while(true)
+	tempCount = 0;
+	while(tempCount < 50)
 	{
 		usleep(50000);
 
@@ -286,10 +295,12 @@ int main(int argc, char* argv[])
 			<< bme280Handle.getLastPressure() << "Pa\t"
 			<< bme280Handle.getLastHumidity() << "%RH" << endl;
 
+		tempCount++;
+
 		res = bme280Handle.takeMeasurement();
 		if(res != 0)
 			cout << "BME280 measurement error: (" << res << ')' << endl;
-	}*/
+	}
 
 	cout << "Success!" << endl;
 

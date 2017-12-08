@@ -73,7 +73,10 @@ int commsInterface::setChipSelectAddr(int value)
 		if(value & (1 << i)) // set pin high if the ith position of value is a 1
 		{
 			if(setPinVal(addressPins[i], true) != 0)
+			{
 				return(1);
+				cout << "NOPE!!" << endl;
+			}
 		}
 		else // else keep pin low
 		{

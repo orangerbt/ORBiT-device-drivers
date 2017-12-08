@@ -276,5 +276,5 @@ int BME280::getLastPressure()
 int BME280::readWrite(const unsigned char *transBuf, const int transLen,
 			unsigned char *recBuf, const int recLen)
 {
-	return(commsInt->readWriteAddr(transBuf, transLen, recBuf, recLen, 0));
+	return(commsInt->readWriteAddr(transBuf, transLen, recBuf, recLen, 0)); // address of 0 = BME
 }
