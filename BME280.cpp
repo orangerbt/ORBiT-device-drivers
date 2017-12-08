@@ -23,7 +23,20 @@ int BME280::initialize(commsInterface *commsI)
 {
 	commsInt = commsI;
 
-	int res = getCalibrationData();
+	const int readStart = 0xD0;
+	unsigned char transBuf[1];
+	unsigned char readBuf[1];
+
+	transBuf[0] = 0b10000000 | readStart;
+
+	int res = readWrite(transBuf, 1, readBuf, sizeof(readBuf));
+	if(res != 0)
+		return(res);
+
+	if(readBuf[0] != 0x60)
+		return(-1);
+
+	res = getCalibrationData();
 	if(res != 0)
 		return(res);
 }

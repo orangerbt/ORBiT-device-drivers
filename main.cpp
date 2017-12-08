@@ -15,6 +15,10 @@ using namespace std;
 
 #define deviceAddr "/dev/spidev1.0"
 
+#define DEBUG_GYRO
+//#define DEBUG_ACCEL
+//#define DEBUG_ATMO
+
 int main(int argc, char* argv[])
 {
 	commsInterface commsI;
@@ -27,7 +31,9 @@ int main(int argc, char* argv[])
 		return(1);
 	}
 
+	int tempCount = 0;
 
+#ifdef DEBUG_GYRO
 	BMX055_G bmx055_Gyro;
 
 	res = bmx055_Gyro.initialize(&commsI);
@@ -75,7 +81,6 @@ int main(int argc, char* argv[])
 	clock_gettime(CLOCK_PROCESS_CPUTIME_ID, &ts);
 	double lastTime = ts.tv_nsec;
 
-	int tempCount = 0;
 	int lastFill = 0;
 	while(tempCount < 50)
 	{
@@ -142,6 +147,8 @@ int main(int argc, char* argv[])
 
 		usleep(10000);
 	}
+#endif
+#ifdef DEBUG_ACCEL
 
 	BMX055_A bmx055_Accel;
 
@@ -245,7 +252,8 @@ int main(int argc, char* argv[])
 	//if(res != 0)
 	//	cout << "BMX055 output format set error: (" << res << ')' << endl;
 
-
+#endif
+#ifdef DEBUG_ATMO
 
 	BME280 bme280Handle;
 
@@ -303,6 +311,7 @@ int main(int argc, char* argv[])
 	}
 
 	cout << "Success!" << endl;
+#endif
 
 	return(0);
 }

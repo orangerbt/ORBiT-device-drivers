@@ -1,5 +1,5 @@
-#ifndef BMX055_G_HANDLE
-#define BMX055_G_HANDLE
+#ifndef BMX055_M_HANDLE
+#define BMX055_M_HANDLE
 
 
 //register constants
@@ -63,45 +63,33 @@
 #define GYR_AUTOSLEEP_DUR_40MS 0x07
 
 
-class BMX055_M
+class BMX055_G
 {
 public:
 
-	struct gyrData
+	struct magData
 	{
-		float X;
-		float Y;
-		float Z;
+		float XAxis;
+		float YAxis;
+		float ZAxis;
 	};
 
-	BMX055_M();
-	~BMX055_M();
+	BMX055_G();
+	~BMX055_G();
 
 	int initialize(commsInterface *commsI);
 
-	// CAUTION if setGyroRange fails, data readout may become unpredictable!
-	int setGyroRange(const unsigned char range);
-	int setGyroFilterBandwidth(const unsigned char bandwidth);
-
 	int setDataOutputFormat(const unsigned char format);
 
-	// returns contents of register 0x0E or -1 on failure
-	int getFIFOStatus();
-	// CAUTION if setFIFOConfig fails, datareadout may become unpredictable!
-	int setFIFOConfig(const unsigned char config);
 
-	// the fill level of the FIFO registers. returns -1 on failure
-	int getFIFOFillStatus();
-	int getFIFOOverrunStatus();
 
-	int getFIFOData(gyrData *structPointer,const int length);
+	int getData(magData structPointer,const int length);
 
 	//TODO refine check for invalid combinations
-	int setPowermodeAndSleepDur(const unsigned char config);
-	int setFastPwrConfig(const unsigned char config);
+	int setControlSettings(const unsigned char config);
 
 
-	// soft reset chip
+	// soft reset chip (can also be done with setControlSettings)
 	int reset();
 
 

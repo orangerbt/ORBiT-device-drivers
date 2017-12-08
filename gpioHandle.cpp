@@ -17,6 +17,7 @@ gpioHandle::~gpioHandle()
 //exports pin and sets mode
 int gpioHandle::initializePin(const int pin, const int mode, const bool initialValue)
 {
+	return(0);
 	ofstream exportPin;
 	exportPin.open("/sys/class/gpio/export");
 	if(!exportPin.is_open())
@@ -86,6 +87,7 @@ int gpioHandle::initializePin(const int pin, const int mode, const bool initialV
 // changes pin mode
 int gpioHandle::setPinMode(const int pin, const int mode, const bool initialValue)
 {
+	return(0);
 	ofstream pinMode;
 	sprintf(buffer,"/sys/class/gpio/gpio%d/direction",pin);
 	pinMode.open(buffer);
@@ -137,6 +139,7 @@ int gpioHandle::setPinMode(const int pin, const int mode, const bool initialValu
 // retuns -1 when pin is unusable, else returns 0
 int gpioHandle::setPinVal(const int pin, const bool val)
 {
+	return(0);
 	ofstream setVal;
 	sprintf(buffer,"/sys/class/gpio/gpio%d/value",pin);
 	setVal.open(buffer);
@@ -198,6 +201,7 @@ bool gpioHandle::pinOpen(const int pin)
 // unexports pin
 int gpioHandle::pinClose(const int pin)
 {
+	return(0);
 	ofstream exportPin;
 	exportPin.open("/sys/class/gpio/unexport");
 	if(!exportPin.is_open())
