@@ -63,19 +63,19 @@
 #define GYR_AUTOSLEEP_DUR_40MS 0x07
 
 
-class BMX055_M
+class BMX055_G
 {
 public:
 
 	struct gyrData
 	{
-		float X;
-		float Y;
-		float Z;
+		float XAxis;
+		float YAxis;
+		float ZAxis;
 	};
 
-	BMX055_M();
-	~BMX055_M();
+	BMX055_G();
+	~BMX055_G();
 
 	int initialize(commsInterface *commsI);
 

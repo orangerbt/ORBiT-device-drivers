@@ -10,14 +10,17 @@
 #include "BME280.h"
 #include "BMX055_ACCEL.h"
 #include "BMX055_GYRO.h"
+#include "BMX055_MAGN.h"
 
 using namespace std;
 
 #define deviceAddr "/dev/spidev1.0"
 
-#define DEBUG_GYRO
+//#define DEBUG_GYRO
 //#define DEBUG_ACCEL
 //#define DEBUG_ATMO
+#define DEBUG_MAGN
+
 
 int main(int argc, char* argv[])
 {
@@ -311,6 +314,68 @@ int main(int argc, char* argv[])
 	}
 
 	cout << "Success!" << endl;
+#endif
+#ifdef DEBUG_MAGN
+
+	BMX055_M bmx055_Magn;
+
+	res = bmx055_Magn.initialize(&commsI);
+	if(res != 0)
+	{
+		cout << "BMX055_M initialize error: (" << res << ')' << endl;
+		return(-1);
+	}
+	usleep(10000);
+
+	if(argc > 1)
+	{
+		if(strcmp(argv[1], "-r") == 0)
+		{
+			cout << "reset chip!" << endl;
+			bmx055_Magn.reset();
+			return(0);
+		}
+	}
+
+	res = bmx055_Magn.setOpperationSettings(MAG_OUT_DATARATE_2HZ | MAG_NORMAL_MODE);
+	if(res != 0)
+		cout << "BMX055_M opperation settingserror: (" << res << ')' << endl;
+	res = bmx055_Magn.setRepititions(0x10,0x10);
+	if(res != 0)
+		cout << "BMX055_M repitions set error: (" << res << ')' << endl;
+	res = bmx055_Magn.setAxisAndPins(MAG_CHN_X_EN | MAG_CHN_Y_EN | MAG_CHN_Z_EN);
+	if(res != 0)
+		cout << "BMX055_M axes set error: (" << res << ')' << endl;
+
+
+	tempCount = 0;
+	while(tempCount < 50)
+	{
+		BMX055_M::magData tempData;
+
+		res = bmx055_Magn.getData(&tempData);
+		if(res != 0)
+			cout << "BMX055_M data get error: (" << res << ')' << endl;
+
+		cout << "X: " << tempData.XAxis << "mT\tY: "
+			<< tempData.YAxis << "mT\tZ: "
+			<< tempData.ZAxis << "mT\t";
+		if(tempData.overflow)
+			cout << "Overflow!";
+		cout << endl;
+
+
+		//tempCount++;
+		usleep(500000);
+	}
+
+
+
+
+	//res = bmx055_Accel.setDataOutputFormat(ACC_F_BANDWIDTH_31_25HZ);
+	//if(res != 0)
+	//	cout << "BMX055 output format set error: (" << res << ')' << endl;
+
 #endif
 
 	return(0);

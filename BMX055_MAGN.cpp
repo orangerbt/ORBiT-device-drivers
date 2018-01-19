@@ -1,53 +1,59 @@
 #include <iostream>
 #include <bitset>
+#include <unistd.h>
 
 #include "commsInterface.h"
 
-#include "BMX055_GYRO.h"
+#include "BMX055_MAGN.h"
 
 using namespace std;
 
-BMX055_G::BMX055_G()
+BMX055_M::BMX055_M()
 {
 	commsInt = nullptr;
-	FIFOOutputFormat = GYR_FIFODATA_XYZ;
-	lastPowerMode = GYR_NORMAL_POWER;
-	DegPerLSB = 0.0038f; // set initial range to +- 125Deg/s
+	disabledAxes = 0; //axes are active low - All enabled by default
+	lastPowerMode = MAG_SUSPEND_MODE;
 }
 
-BMX055_G::~BMX055_G()
+BMX055_M::~BMX055_M()
 {
 	commsInt = nullptr;
 }
 
-int BMX055_G::initialize(commsInterface *commsI)
+int BMX055_M::initialize(commsInterface *commsI)
 {
 	commsInt = commsI;
 
-	const int readStart = 0x00;
+	//TODO make sure setControlSettings can run while in 3pin spi mode
+	//(maybe make another function instead?)
+
+	setControlSettings(MAG_SLEEP); // boot up chip to access ID
+
+
+	const int readStart = 0x40;
 	unsigned char transBuf[1];
 	unsigned char readBuf[1];
 
 	transBuf[0] = 0b10000000 | readStart;
+
+	usleep(10000);
 
 	int res = readWrite(transBuf, 1, readBuf, sizeof(readBuf));
 	if(res != 0)
 		return(res);
 
+
+	//cout << (int)readBuf[0] << endl;
 	//identification is incorrect
-	if(readBuf[0] != 0x0f)
+	if(readBuf[0] != 0x32)
 		return(-1);
-
-	//res = reset();
-	//if(res != 0)
-	//	return(res);
 
 	return(0);
 }
 
-int BMX055_G::setGyroRange(const unsigned char range)
+int BMX055_M::setControlSettings(const unsigned char config)
 {
-	unsigned char transBuf[] = {(0b01111111 & 0x0F), (unsigned char)(range & 0x07)};
+	unsigned char transBuf[] = {(0b01111111 & 0x4B), (unsigned char)(config & 0x87)};
 
 	int res = readWrite(transBuf, 2, nullptr, 0);
 
@@ -57,41 +63,21 @@ int BMX055_G::setGyroRange(const unsigned char range)
 	unsigned char readBuf[1];
 	readBuf[0] = 0;
 
-	transBuf[0] = (0b10000000 | 0x0F);
+	transBuf[0] = (0b10000000 | 0x4B);
 	res = readWrite(transBuf, 1, readBuf, sizeof(readBuf));
 	if(res != 0)
 		return(res);
 
-	if((readBuf[0] & 0x07) != (range & 0x07))
+	if((readBuf[0] & 0x87) != (config & 0x87))
 		return(-1);
 
-	switch(range & 0x07) // set deg/sec/least siginificant bit according to range (definitions from datasheet)
-	{
-	case(GYR_RANGE_2000D_S):
-		DegPerLSB = 0.061f;
-		break;
-	case(GYR_RANGE_1000D_S):
-		DegPerLSB = 0.0305f;
-		break;
-	case(GYR_RANGE_500D_S):
-		DegPerLSB = 0.0153f;
-		break;
-	case(GYR_RANGE_250D_S):
-		DegPerLSB = 0.0076f;
-		break;
-	case(GYR_RANGE_125D_S):
-		DegPerLSB = 0.0038f;
-		break;
-	default:
-		return(-2);
-	}
 
 	return(0);
 }
 
-int BMX055_G::setGyroFilterBandwidth(const unsigned char bandwidth)
+int BMX055_M::setOpperationSettings(const unsigned char config)
 {
-	unsigned char transBuf[] = {(0b01111111 & 0x10),(unsigned char)(bandwidth & 0x0f)};
+	unsigned char transBuf[] = {(0b01111111 & 0x4C), config};
 
 	int res = readWrite(transBuf, 2, nullptr, 0);
 
@@ -101,20 +87,53 @@ int BMX055_G::setGyroFilterBandwidth(const unsigned char bandwidth)
 	unsigned char readBuf[1];
 	readBuf[0] = 0;
 
-	transBuf[0] = (0b10000000 | 0x10);
+	transBuf[0] = (0b10000000 | 0x4C);
 	res = readWrite(transBuf, 1, readBuf, sizeof(readBuf));
 	if(res != 0)
 		return(res);
 
-	if((readBuf[0] & 0x0F) != (bandwidth & 0x0F))
+	if(readBuf[0] != config)
 		return(-1);
 
 	return(0);
 }
 
-int BMX055_G::setDataOutputFormat(const unsigned char format)
+int BMX055_M::setRepititions(const unsigned char repetitionsXY, const unsigned char repetitionsZ)
 {
-	unsigned char transBuf[] = {(0b01111111 & 0x13), (unsigned char)(format & 0xc0)};
+	unsigned char transBuf[2] = {(0b01111111 & 0x51), repetitionsXY};
+
+	int res = readWrite(transBuf, 2, nullptr, 0);
+
+	if(res != 0)
+		return(res);
+
+	transBuf[0] = (0b01111111 & 0x52);
+	transBuf[1] = repetitionsZ;
+
+	res = readWrite(transBuf, 2, nullptr, 0);
+
+	if(res != 0)
+		return(res);
+
+
+	unsigned char readBuf[2];
+	readBuf[0] = 0;
+	readBuf[1] = 0;
+
+	transBuf[0] = (0b10000000 | 0x51);
+	res = readWrite(transBuf, 1, readBuf, sizeof(readBuf));
+	if(res != 0)
+		return(res);
+
+	if(readBuf[0] != repetitionsXY || readBuf[1] != repetitionsZ)
+		return(-1);
+
+	return(0);
+}
+
+int BMX055_M::setAxisAndPins(const unsigned char config)
+{
+	unsigned char transBuf[] = {(0b01111111 & 0x4E), config};
 
 	int res = readWrite(transBuf, 2, nullptr, 0);
 
@@ -124,252 +143,77 @@ int BMX055_G::setDataOutputFormat(const unsigned char format)
 	unsigned char readBuf[1];
 	readBuf[0] = 0;
 
-	transBuf[0] = (0b10000000 | 0x13);
+	transBuf[0] = (0b10000000 | 0x4E);
 	res = readWrite(transBuf, 1, readBuf, sizeof(readBuf));
 	if(res != 0)
 		return(res);
 
-	if((readBuf[0] & 0xc0) != (format & 0xc0))
+	if(readBuf[0] != config)
 		return(-1);
+
+	disabledAxes = (config & 0x38) >> 3;
+
+
 
 	return(0);
 }
 
-int BMX055_G::getFIFOStatus()
+int BMX055_M::getData(magData *structPointer)
 {
 	int res;
-
-	const int readStart = 0x0E;
+	const int readStart = 0x42;
 	unsigned char transBuf[1];
-	unsigned char readBuf[1];
+	unsigned char readBuf[9];
 	transBuf[0] = 0b10000000 | readStart;
 
-	res = readWrite(transBuf, 1, readBuf, sizeof(readBuf));
+	res = readWrite(transBuf, 1, readBuf, 9);
 	if(res != 0)
 		return(-1);
 
-	return(readBuf[0]);
-}
+	structPointer->overflow = (readBuf[8] & 0x40) > 0;
 
-int BMX055_G::setFIFOConfig(const unsigned char config)
-{
-	unsigned char transBuf[] = {(0b01111111 & 0x3E), (unsigned char)(config & 0xc3)};
+	int rHall = (readBuf[7] * 0x40) + ((readBuf[6] & 0xfc) >> 2);
 
-	int res = readWrite(transBuf, 2, nullptr, 0);
+	int tempRes;
 
-	if(res != 0)
-		return(res);
+	structPointer->XAxis = 0;
+	structPointer->YAxis = 0;
+	structPointer->ZAxis = 0;
 
-	unsigned char readBuf[1];
-	readBuf[0] = 0;
 
-	transBuf[0] = (0b10000000 | 0x3E);
-	res = readWrite(transBuf, 1, readBuf, sizeof(readBuf));
-	if(res != 0)
-		return(res);
+	if(!(lastPowerMode & MAG_CHN_X_DIS))
+	{
+		tempRes = (readBuf[1] * 0x20) + ((readBuf[0] & 0xf8) >> 3);
+		if((readBuf[1] & 0x80) > 0) // number is negative
+			tempRes |= ~(0xfff);
 
-	if((readBuf[0] & 0xc3) != (config & 0xc3))
-		return(-1);
+		structPointer->XAxis = (tempRes / (float)(1<<16))*1000;
+	}
 
-	FIFOOutputFormat = config & 0x03; //remember output setting for fifo readout
+	if(!(lastPowerMode & MAG_CHN_Y_DIS))
+	{
+		tempRes = (readBuf[3] * 0x20) + ((readBuf[2] & 0xf8) >> 3);
+		if((readBuf[3] & 0x80) > 0) // number is negative
+			tempRes |= ~(0xfff);
+
+		structPointer->YAxis = (tempRes / (float)(1<<16))*1000;
+	}
+
+	if(!(lastPowerMode & MAG_CHN_Z_DIS))
+	{
+		tempRes = (readBuf[5] * 0x80) + ((readBuf[4] & 0xfe) >> 1);
+		if((readBuf[5] & 0x80) > 0) // number is negative
+			tempRes |= ~(0x3fff);
+
+		structPointer->ZAxis = (tempRes / (float)(1<<16))*1000;
+	}
 
 	return(0);
 }
 
-int BMX055_G::getFIFOFillStatus()
+int BMX055_M::reset()
 {
-	int res;
-
-	const int readStart = 0x0E;
-	unsigned char transBuf[1];
-	unsigned char readBuf[1];
-	transBuf[0] = 0b10000000 | readStart;
-
-	res = readWrite(transBuf, 1, readBuf, sizeof(readBuf));
-	if(res != 0)
-		return(-1);
-
-	return(readBuf[0] & 0xef);
-}
-
-int BMX055_G::getFIFOOverrunStatus()
-{
-	int res;
-
-	const int readStart = 0x0E;
-	unsigned char transBuf[1];
-	unsigned char readBuf[1];
-	transBuf[0] = 0b10000000 | readStart;
-
-	res = readWrite(transBuf, 1, readBuf, sizeof(readBuf));
-	if(res != 0)
-		return(-1);
-
-	if((readBuf[0] & 0x80) > 0)
-		return(1);
-	else
-		return(0);
-}
-
-int BMX055_G::getFIFOData(gyrData *structPointer,const int length)
-{
-	if(length < 1)
-		return(-2);// return error if struct length is less than 1
-
-	int arrLength;
-	if(FIFOOutputFormat == GYR_FIFODATA_XYZ)
-		arrLength = length * 6; // 3 axies and 2 registers per axis
-	else
-		arrLength = length * 2; // just one 2 register axis
-
-	int res;
-	const int readStart = 0x3F;
-	unsigned char transBuf[1];
-	unsigned char *readBuf = new unsigned char[arrLength];
-	transBuf[0] = 0b10000000 | readStart;
-
-	res = readWrite(transBuf, 1, readBuf, arrLength);
-	if(res != 0)
-	{
-		delete readBuf;
-		return(-1);
-	}
-
-	switch(FIFOOutputFormat)
-	{
-	case(GYR_FIFODATA_XYZ):
-		for(int i = 0; i < length; i++)
-		{
-			short int tempRes = readBuf[i*6] + (readBuf[(i*6)+1] << 8); // X
-			structPointer[i].XAxis = tempRes * DegPerLSB;
-
-			tempRes = readBuf[(i*6)+1] + (readBuf[(i*6)+3] << 8); // Y
-			structPointer[i].YAxis = tempRes * DegPerLSB;
-
-			tempRes = readBuf[(i*6)+4] + (readBuf[(i*6)+5] << 8); // Z
-			structPointer[i].ZAxis = tempRes * DegPerLSB;
-
-		}
-		break;
-
-	case(GYR_FIFODATA_X):
-		for(int i = 0; i < length; i++)
-		{
-			short int tempRes = readBuf[i*2] + (readBuf[(i*2)+1] << 8);
-
-			structPointer[i].XAxis = tempRes *DegPerLSB;
-			structPointer[i].YAxis = 0;
-			structPointer[i].ZAxis = 0;
-		}
-		break;
-
-	case(GYR_FIFODATA_Y):
-		for(int i = 0; i < length; i++)
-		{
-			short int tempRes = readBuf[i*2] + (readBuf[(i*2)+1] << 8);
-
-			structPointer[i].XAxis = 0;
-			structPointer[i].YAxis = tempRes * DegPerLSB;
-			structPointer[i].ZAxis = 0;
-		}
-		break;
-
-	case(GYR_FIFODATA_Z):
-		for(int i = 0; i < length; i++)
-		{
-			short int tempRes = readBuf[i*2] + (readBuf[(i*2)+1] << 8);
-
-			structPointer[i].XAxis = 0;
-			structPointer[i].YAxis = 0;
-			structPointer[i].ZAxis = tempRes * DegPerLSB;
-		}
-		break;
-
-	default:
-		delete readBuf;
-		return(-3);
-	}
-	delete readBuf;
-	return(0);
-}
-
-int BMX055_G::setPowermodeAndSleepDur(const unsigned char config)
-{
-
-	int nextPwrMode = config & 0xa0;
-	switch(lastPowerMode)
-	{
-	case(GYR_NORMAL_POWER):
-		break;
-	case(GYR_DEEP_SUS_POWER):
-		if(nextPwrMode != GYR_NORMAL_POWER)
-			return(-2);
-	case(GYR_SUSPEND_POWER):
-		break;
-	}
-
-	unsigned char transBuf[] = {(0b01111111 & 0x11),(unsigned char)(config & 0xae)};
-
-	int res = readWrite(transBuf, 2, nullptr, 0);
-
-	if(res != 0)
-		return(res);
-
-	unsigned char readBuf[1];
-	readBuf[0] = 0;
-
-	transBuf[0] = (0b10000000 | 0x11);
-	res = readWrite(transBuf, 1, readBuf, sizeof(readBuf));
-	if(res != 0)
-		return(res);
-
-	if((readBuf[0] & 0xae) != (config & 0xae))
-		return(-1);
-
-	lastPowerMode = config & 0xa0;
-
-	return(0);
-}
-
-int BMX055_G::setFastPwrConfig(const unsigned char config)
-{
-
-	//int nextPwrMode = config & 0xE0;
-	switch(lastPowerMode)
-	{
-	case(GYR_DEEP_SUS_POWER):
-		if(config & 0x80 > 0)
-			return(-2);
-	}
-
-	unsigned char transBuf[] = {(0b01111111 & 0x12),(unsigned char)(config & 0xfe)};
-
-	int res = readWrite(transBuf, 2, nullptr, 0);
-
-	if(res != 0)
-		return(res);
-
-	unsigned char readBuf[1];
-	readBuf[0] = 0;
-
-	transBuf[0] = (0b10000000 | 0x12);
-	res = readWrite(transBuf, 1, readBuf, sizeof(readBuf));
-	if(res != 0)
-		return(res);
-
-	if((readBuf[0] & 0xfe) != (config & 0xfe))
-		return(-1);
-
-	if(config & 0x80 > 0)
-		lastPowerMode = GYR_NORMAL_POWER;
-
-	return(0);
-}
-
-
-int BMX055_G::reset()
-{
-	unsigned char transBuf[] = {(0b01111111 & 0x14), 0xB6};
+	unsigned char transBuf[] = {(0b01111111 & 0x4B), 0x82};
 
 	int res = readWrite(transBuf, 2, nullptr, 0);
 
@@ -379,8 +223,8 @@ int BMX055_G::reset()
 	return(0);
 }
 
-int BMX055_G::readWrite(const unsigned char *transBuf, const int transLen,
+int BMX055_M::readWrite(const unsigned char *transBuf, const int transLen,
 			unsigned char *recBuf, const int recLen)
 {
-	return(commsInt->readWriteAddr(transBuf, transLen, recBuf, recLen, 2)); // adress 2 = gyroscope
+	return(commsInt->readWriteAddr(transBuf, transLen, recBuf, recLen, 3)); // adress 3 = gyroscope
 }
