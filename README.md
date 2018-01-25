@@ -4,7 +4,7 @@
 	To provide interfaces with various spi devices on Beaglebone capes as well as GPIO capabilities.
 
 ## Current Version
-### Ver: 0.12
+### Ver: 0.20
 
 ## Currently Implemented
 
@@ -16,6 +16,7 @@
 * BMX055 positional chip
   - Accelerometer module
   - Gyroscope module
+  - Magnetometer module
 
 * GPIO handleing
 
@@ -23,33 +24,36 @@
 ### Add/Implement
 
 * BMX055
-  - Magnetometer module
   - Additional accelerometer functions
     - Self test
-  - Additional Gyroscope functions
+  - Additional gyroscope functions
     - Self test
+  - Additional magnetometer functions
+    - Self Test
 
 ### Potential Features
 
 * BMX055
   - Additional accelerometer functions
-    - Interupt engines
+    - tnterupt engines
     - few-time non-volitile memory management
     - digital interfaces(I2C/3wire SPI)
     - offselts
     - interupts
   - Additional gyroscope functions
-    - Interupt engines
+    - tnterupt engines
     - few-time non-volitile memory management
     - digital interfaces(I2C/3wire SPI)
     - offselts
     - interupts
+  - Additional  functions
+    - interupts
+    - temperature compention
 
 ### Refine
 
 * BMX055
   - Power managment
-
 
 * BME280
 
