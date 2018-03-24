@@ -30,11 +30,12 @@ int main(int argc, char* argv[])
 	int res = commsI.initialize(deviceAddr, 3, addressPins);
 	if(res != 0)
 	{
-		cout << "Error: (" << res << ')' << endl;
+		cout << "Error on initializing comms interface: (" << res << ')' << endl;
 		return(1);
 	}
 
 	int tempCount = 0;
+	int lastFill = 0;
 
 #ifdef DEBUG_GYRO
 	BMX055_G bmx055_Gyro;
@@ -84,7 +85,7 @@ int main(int argc, char* argv[])
 	clock_gettime(CLOCK_PROCESS_CPUTIME_ID, &ts);
 	double lastTime = ts.tv_nsec;
 
-	int lastFill = 0;
+	lastFill = 0;
 	while(tempCount < 50)
 	{
 		int fill = bmx055_Gyro.getFIFOFillStatus();
@@ -333,6 +334,7 @@ int main(int argc, char* argv[])
 		{
 			cout << "reset chip!" << endl;
 			bmx055_Magn.reset();
+			usleep(5000000);
 			return(0);
 		}
 	}
@@ -365,7 +367,7 @@ int main(int argc, char* argv[])
 		cout << endl;
 
 
-		//tempCount++;
+		tempCount++;
 		usleep(500000);
 	}
 

@@ -26,7 +26,7 @@ public:
 
 	bool pinOpen(const int pin); // returns true if pin is usable
 
-	int pinClose(const int pin); // unexports pin
+	int pinClose(const int pin); //unexports pin
 
 private:
 	char *buffer;	// for sprintfs
