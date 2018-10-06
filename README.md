@@ -60,27 +60,46 @@
 ## Device Tree Overlays
 
 To compile a device tree overlay, use the command:
+
     dtc -O dtb -o OUTFILE_NAME.dtbo -b 0 -@ INFILE_NAME.dts
+	
 Where OUTPUTFILE_NAME.dtbo and INFILE_NAME.dts have to match the name given
 in your .dts file under partnumber and version in the format:
+
     <partnumber>-<version>.dts
+	
 To make it reachable by the system, copy your output file using:
+
     sudo cp OUTPUTFILE_NAME.dtbo /lib/firmware/
+	
 To allow the cape to be loaded, open the file uEnv.txt using:
+
     sudo nano /boot/uEnv.txt
+	
 Once open, find the line:
+
     cape_enable=bone_capemgr.enable_partno= [...]
+	
 Where [...] will be a comma seperated list of the partnumbers of all the enabled capes.
 
+
 After a reboot, your newly added DTO should be in the list when the following command is entered:
+
     cat /sys/devices/platform/bone_capemgr/slots
-If the list doesn't contain your DTO, then there was an issue in loading it. You can check for boot time errors with the command:
+	
+If the list doesn't contain your DTO, then there was an issue in loading it.
+You can check for boot time errors with the command:
+
     dmesg
+	
 For examples on how default DTOs are implemented, see the directory:
+
     /opt/source/bb.org-overlays/src/arm
 
+	
 For some functions, some capes may have to be loaded earlier, for instance the SPI0 bus.
 For these kinds of DTOs, you may have to add the partnumbers to the file found under:
+
     sudo nano /etc/default/capemgr
 
 ## Credits
