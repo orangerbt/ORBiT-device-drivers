@@ -1,7 +1,8 @@
 # ORBiT Device Drivers
 
 ## Main Purpose
-	Provide interfaces with various SPI devices on BeagleBone capes as well as GPIO capabilities.
+
+Provide interfaces with various SPI devices on BeagleBone capes as well as GPIO capabilities.
 
 ## Current Version
 ### Ver: 0.20
