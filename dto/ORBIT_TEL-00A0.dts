@@ -1,0 +1,160 @@
+
+/dts-v1/; /* NOTE: the filename for your cape HAS to be: <part_number>-<version>.dts (Would be nice to put that in the FUCKING documentation)*/
+/plugin/;
+
+/* A good look at how to compile and implement a DTO: http://www.weigu.lu/sb-computer/bbb_device_tree/index.html */
+
+/{
+	compatible = "ti,beaglebone", "ti,beaglebone-black";
+	part_number = "ORBIT_TEL"; /* Keep this name in mind */
+	version = "00A0";
+	
+	/* this device overlay uses these pins (exclusively):*/
+	exclusive-use = 
+	/*spi pins */
+	"P9.17",	/* spi0_cs0 */
+	"P9.18",	/* spi0_d1 */
+	"P9.21",	/* spi0_d0 */
+	"P9.22",	/* spi0_sclk */
+	"spi0",
+
+	/*gpio pins*/
+	"P8.26",
+	"P8.27",
+	"P8.28",
+	"gpio1_29",
+	"gpio2_22",
+	"gpio2_24",
+
+	//UART4 pins
+	"P9.13",	// uart4_txd
+	"P9.11",	// uart4_rxd
+	"P8.33",	// uart4_rtsn
+	"P8.35",	// uart4_ctsn
+	"uart4";
+
+	fragment@0
+	{
+		target = <&am33xx_pinmux>;
+		__overlay__ 
+		{
+			telemetry_pins: pinmux_telemetry_pins 
+			{ 
+				/* the settings for the pins are set here*/
+				pinctrl-single,pins = 
+				< 
+					/* In this case, pin P8_26 (0x07c) p8_27 (0x0e0) and P8_28 (0x0e8) are set to the 0x7 (GPIO) mode */
+					0x07c 0x7
+					0x0e0 0x7
+					0x0e8 0x7
+				>;
+ 
+			// modes: Bit number: 7 6-c 5-r 4-s 3-p 2-m 1-m 0-m
+			// m = 3 mode bits [0-7]
+			// p = 0 pullups/pulldowns enabled, 1 pullups/pulldowns disabled
+			// s = 0 pulldown selected, 1 pullup selected
+			// r = 0 pin is output, 1 pin is input
+			// c = 0 fast slew control, 1 = slow slew control
+
+			/* you can find the adresses from: https://github.com/jadonk/bonescript/blob/64732854d4c296de8792d5d4c49639ae5f5ecede/src/bone.js
+			or http://www.kilobaser.com/blog/2014-07-28-beaglebone-black-devicetreeoverlay-generator and cross reference the values given at this stage */
+			};
+		};
+	};
+
+	fragment@1 
+	{
+		target = <&am33xx_pinmux>; 
+		__overlay__ 
+		{
+			spi0_pins_s0: spi0_pins_s0 
+			{
+				pinctrl-single,pins = 
+				< 
+					// these are the pins for the spi0
+					0x150 0x30  // spi0_sclk, INPUT_PULLUP | MODE0 
+					0x154 0x30  // spi0_d0, INPUT_PULLUP | MODE0 
+					0x158 0x10  // spi0_d1, OUTPUT_PULLUP | MODE0 
+					0x15c 0x10  // spi0_cs0, OUTPUT_PULLUP | MODE0 
+				>;
+			};
+		};
+	};
+
+	fragment@2 
+	{
+		target = <&am33xx_pinmux>;
+		__overlay__ 
+		{
+			bb_uart4_pins: pinmux_bb_uart4_pins 
+			{
+				pinctrl-single,pins = <
+				// pin out = 0x0 pin in = 0x20
+				0x074 0x06 //BONE_P9_13 (PIN_OUTPUT | MUX_MODE6)     // gpmc_wpn.uart4_txd_mux2
+				0x070 0x26 //BONE_P9_11 (PIN_INPUT  | MUX_MODE6)     // gpmc_wait0.uart4_rxd_mux2
+				0x0d4 0x06 //(PIN_OUTPUT | MUX MODE6) uart4_rtsn
+				0x0d0 0x06 //(PIN_OUTPUT | MUX MODE6) uart4_ctsn
+				>;
+			};
+		};
+	};
+	
+	fragment@3
+	{
+		target = <&ocp>;
+		__overlay__ 
+		{
+			enabler 
+			{ 
+				/* here the previous code is enabled (The names on this line are insignificant) */
+				compatible = "bone-pinmux-helper";
+				status = "okay";
+				pinctrl-names = "default";
+				pinctrl-0 = <&telemetry_pins>;
+			};
+		};
+	};
+
+	fragment@4 
+	{ 
+		// fragment to enable spi0 CAUTION: SPI0 OR SP1 HAVE TO BE ENABLED AT BOOT (you cannot just "cat ORBIT_TEL > /sys/devices/platform/bone_capemgr/slots" for the spi bus)
+		target = <&spi0>;
+		__overlay__ 
+		{
+			#address-cells = <1>;
+			#size-cells = <0>;
+
+			status = "okay";
+			pinctrl-names = "default";
+			pinctrl-0 = <&spi0_pins_s0>;
+
+			spidev@0 
+			{
+				 spi-max-frequency = <24000000>;
+				 reg = <0>;
+				 compatible = "linux,spidev";
+			};
+		};
+	};
+
+	fragment@5 
+	{
+		target = <&uart4>;
+		__overlay__ 
+		{
+			status = "okay";
+			pinctrl-names = "default";
+			pinctrl-0 = <&bb_uart4_pins>;
+		};
+	};
+};
+
+
+
+/* In conclusion, Device Tree Overlays are an aggregation of convoluted bullshit, which have the sole purposes of making everyones lives harder.
+ The doccumentation is absolutely an appalling mass of disorganized and convoluted mess, for which half the links have ceased to work over the few years the bbb was available.
+ There is no easy command to simply change the mode of a pin, even for debugging purposes, just so people have to jump through unnecessary hoops that is DTOs.
+ Oh, and whats even better is, on default fucking bullshit like AN LCD MODULE IS FUCKING ENABLED BY DEFAULT. LIKE WTF BB. WHY DID ANY-FUCKING-ONE AT BEAGLEBONE SHIT HQ
+ THINK THAT WAS EVEN REMOTELY A GOOD FUCKING IDEA. Way to FUCKING go guys, take a really good idea and hardware and rub so much SHIT on it to make what is the FUCKING-ONE
+ mess that is the beaglebone.
+ May this be the only rant that I include in the code, although I severely doubt it. */
