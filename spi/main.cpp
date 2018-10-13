@@ -4,8 +4,8 @@
 #include <unistd.h>
 #include <sys/time.h>
 
-//#include "spiHandle.h"
-//#include "gpioHandle.h"
+#include "socket.h"
+#include "dataProtocol.h"
 #include "commsInterface.h"
 #include "BME280.h"
 #include "BMX055_ACCEL.h"
@@ -16,11 +16,22 @@ using namespace std;
 
 #define deviceAddr "/dev/spidev1.0"
 
-//#define DEBUG_GYRO
-//#define DEBUG_ACCEL
-//#define DEBUG_ATMO
+#define DEBUG_GYRO
+#define DEBUG_ACCEL
+#define DEBUG_ATMO
 #define DEBUG_MAGN
 
+#define ADDR_GYRO 6
+#define DEST_GYRO "localhost:2222"
+
+#define ADDR_ACCEL 7
+#define DEST_ACCEL "localhost:2222"
+
+#define ADDR_ATMO 8
+#define DEST_ATMO "localhost:2222"
+
+#define ADDR_MAGN 9
+#define DEST_MAGN "localhost:2222"
 
 int main(int argc, char* argv[])
 {
@@ -34,11 +45,16 @@ int main(int argc, char* argv[])
 		return(1);
 	}
 
-	int tempCount = 0;
-	int lastFill = 0;
+	udpSocketHandle conn;
+
+	string output;
+	dataProtocol prot;
+	dataIdentifier ident;
 
 #ifdef DEBUG_GYRO
 	BMX055_G bmx055_Gyro;
+
+	cout << "Initializing BMX055 GYRO..." << endl;
 
 	res = bmx055_Gyro.initialize(&commsI);
 	if(res != 0)
@@ -61,7 +77,7 @@ int main(int argc, char* argv[])
 	if(res != 0)
 		cout << "BMX055_G range set error: (" << res << ')' << endl;
 
-	res = bmx055_Gyro.setGyroFilterBandwidth(GYR_F_BANDWIDTH_32HZ);
+	res = bmx055_Gyro.setGyroFilterBandwidth(GYR_F_BANDWIDTH_12HZ);//32
 	if(res != 0)
 		cout << "BMX055_G bandwidth set error: (" << res << ')' << endl;
 
@@ -73,88 +89,28 @@ int main(int argc, char* argv[])
 	if(res != 0)
 		cout << "BMX055_G powermode set error: (" << res << ')' << endl;
 
-	res = bmx055_Gyro.setFastPwrConfig(GYR_AUTOSLEEP_DUR_20MS | GYR_PWR_SAVE_MODE);
+	res = bmx055_Gyro.setFastPwrConfig(GYR_AUTOSLEEP_DUR_40MS | GYR_PWR_SAVE_MODE);
 	if(res != 0)
 		cout << "BMX055_G fast power set error: (" << res << ')' << endl;
 
-	float deltaX = 0.0f;
-	float deltaY = 0.0f;
-	float deltaZ = 0.0f;
 
-	timespec ts;
-	clock_gettime(CLOCK_PROCESS_CPUTIME_ID, &ts);
-	double lastTime = ts.tv_nsec;
+	ident.id = ADDR_GYRO;
+        ident.description = "Gyroscope 1";
+        ident.units = "deg/s";
 
-	lastFill = 0;
-	while(tempCount < 50)
+	prot.package(ident, &output);
+	if(conn.sendDataTo(output, DEST_GYRO))
 	{
-		int fill = bmx055_Gyro.getFIFOFillStatus();
-		if(fill == -1)
-			cout << "BMX055_G FIFO fill get error: (" << fill << ')' << endl;
-		int overrun = bmx055_Gyro.getFIFOOverrunStatus();
-		if(overrun == -1)
-			cout << "BMX055_G FIFO overrun get error: (" << overrun << ')' << endl;
-
-		//if(lastFill != fill | overrun > 0)
-		//{
-		//	cout << fill << ' ' << flush;
-
-		//	if(overrun > 0)
-		//		cout << "Overrun! ";
-		//}
-		//lastFill = fill;
-
-		if(fill >= 1)
-		{
-			//cout << endl;
-
-			if(fill > 10)
-				fill = 10;
-
-			BMX055_G::gyrData tempData[10];
-
-			res = bmx055_Gyro.getFIFOData(tempData, fill);
-			if(res == -1)
-				cout << "BMX055_G FIFO data get error: (" << res << ')' << endl;
-
-			clock_gettime(CLOCK_PROCESS_CPUTIME_ID, &ts);
-			double curTime = ts.tv_nsec;
-
-			double deltaTime = (curTime - lastTime)*0.00000001f;
-			deltaTime /= fill;
-			lastTime = curTime;
-			//cout << deltaTime << ' ' << curTime << ' ' << lastTime << endl;
-
-			for(int i = 0; i < fill; i++)
-			{
-				//deltaX += tempData[i].XAxis*deltaTime;
-				//deltaY += tempData[i].YAxis*deltaTime;
-				//deltaZ += tempData[i].ZAxis*deltaTime;
-
-				//cout << i << "\tX:" << deltaX << "deg"
-				//	<< "\tY:" << deltaY << "deg"
-				//	<< "\tZ:" << deltaZ << "deg" << endl;
-
-				tempCount++;
-				cout << i << "\tX:" << tempData[i].XAxis << "deg/s"
-					<< "\tY:" << tempData[i].YAxis << "deg/s"
-					<< "\tZ:" << tempData[i].ZAxis << "deg/s" << endl;
-			}
-
-		}
-
-		//int temp = bmx055_Gyro.getChipTemp();
-		//if(temp == -111)
-		//	cout << "BMX055 chip temperature error: (" << res << ')' << endl;
-
-		//cout << temp << 'C' << endl;
-
-		usleep(10000);
+		return(-1);
 	}
+
+
 #endif
 #ifdef DEBUG_ACCEL
 
 	BMX055_A bmx055_Accel;
+
+	cout << "Initializing BMX055 ACCEL..." << endl;
 
 	res = bmx055_Accel.initialize(&commsI);
 	if(res != 0)
@@ -162,9 +118,6 @@ int main(int argc, char* argv[])
 		cout << "BMX055_A initialize error: (" << res << ')' << endl;
 		return(-1);
 	}
-	//res = bmx055_Gyro.initialize(&commsI);
-	//if(res != 0)
-	//	cout << "BMX055_G initialize error: (" << res << ')' << endl;
 
 	if(argc > 1)
 	{
@@ -196,70 +149,22 @@ int main(int argc, char* argv[])
 	if(res != 0)
 		cout << "BMX055_A powermode set error: (" << res << ')' << endl;
 
+	ident.id = ADDR_ACCEL;
+        ident.description = "Accelerometer 1";
+        ident.units = "G";
 
-	tempCount = 0;
-	lastFill = 0;
-	while(tempCount < 50)
+	prot.package(ident, &output);
+	if(conn.sendDataTo(output, DEST_ACCEL))
 	{
-		int fill = bmx055_Accel.getFIFOFillStatus();
-		if(fill == -1)
-			cout << "BMX055_A FIFO fill get error: (" << res << ')' << endl;
-		int overrun = bmx055_Accel.getFIFOOverrunStatus();
-		if(overrun == -1)
-			cout << "BMX055_A FIFO overrun get error: (" << res << ')' << endl;
-
-		//if(lastFill != fill)
-		//{
-		//	cout << fill << ' ' << flush;
-
-		//	if(overrun > 0)
-		//		cout << "Overrun! ";
-		//}
-		//lastFill = fill;
-
-		if(fill >= 1)
-		{
-			//cout << endl;
-
-			if(fill > 10)
-				fill = 10;
-
-			BMX055_A::accData tempData[10];
-
-			res = bmx055_Accel.getFIFOData(tempData, fill);
-			if(res == -1)
-				cout << "BMX055 FIFO data get error: (" << res << ')' << endl;
-
-			for(int i = 0; i < 1; i++)
-			{
-				tempCount++;
-				cout << i << "\tX:" << tempData[i].XAxis << 'G'
-				<< "\tY:" << tempData[i].YAxis << 'G'
-				<< "\tZ:" << tempData[i].ZAxis << 'G' << endl;
-			}
-
-		}
-
-		//int temp = bmx055_Accel.getChipTemp();
-		//if(temp == -111)
-		//	cout << "BMX055_A chip temperature error: (" << res << ')' << endl;
-
-		//cout << temp << 'C' << endl;
-
-		usleep(10000);
+		return(-1);
 	}
-
-
-
-
-	//res = bmx055_Accel.setDataOutputFormat(ACC_F_BANDWIDTH_31_25HZ);
-	//if(res != 0)
-	//	cout << "BMX055 output format set error: (" << res << ')' << endl;
 
 #endif
 #ifdef DEBUG_ATMO
 
 	BME280 bme280Handle;
+
+	cout << "Initializing BME280..." << endl;
 
 	res = bme280Handle.initialize(&commsI);
 	if(res != 0)
@@ -292,33 +197,22 @@ int main(int argc, char* argv[])
 	if(res != 0)
 		cout << "BME280 ctrl_meas error: (" << res << ')' << endl;
 
-	cout << "started measurements:" << endl;
+	ident.id = ADDR_ATMO;
+        ident.description = "Atmospheric probe 1";
+        ident.units = "C, PA, %RH";
 
-	tempCount = 0;
-	while(tempCount < 50)
+	prot.package(ident, &output);
+	if(conn.sendDataTo(output, DEST_ATMO))
 	{
-		usleep(50000);
-
-		res = bme280Handle.getMeasurementResults();
-		if(res != 0)
-			cout << "BME280 measurement get error: (" << res << ')' << endl;
-
-		cout << bme280Handle.getLastTemperature() << "C\t"
-			<< bme280Handle.getLastPressure() << "Pa\t"
-			<< bme280Handle.getLastHumidity() << "%RH" << endl;
-
-		tempCount++;
-
-		res = bme280Handle.takeMeasurement();
-		if(res != 0)
-			cout << "BME280 measurement error: (" << res << ')' << endl;
+		return(-1);
 	}
 
-	cout << "Success!" << endl;
 #endif
 #ifdef DEBUG_MAGN
 
 	BMX055_M bmx055_Magn;
+
+	cout << "Initializing BMX055 MAGN..." << endl;
 
 	res = bmx055_Magn.initialize(&commsI);
 	if(res != 0)
@@ -349,16 +243,172 @@ int main(int argc, char* argv[])
 	if(res != 0)
 		cout << "BMX055_M axes set error: (" << res << ')' << endl;
 
+	ident.id = ADDR_MAGN;
+        ident.description = "Magnetometer 1";
+        ident.units = "mT";
 
-	tempCount = 0;
+	prot.package(ident, &output);
+	if(conn.sendDataTo(output, DEST_MAGN))
+	{
+		return(-1);
+	}
+
+#endif
+
+	cout << "Initialization Done!" << endl;
+	cout << "Starting measurements..." << endl;
+
+
+// ********************************* Measurements start *********************************
+
+	// stuff about time, that might get used later
+	//timespec ts;
+	//clock_gettime(CLOCK_PROCESS_CPUTIME_ID, &ts);
+	//double lastTime = ts.tv_nsec;
+
+	int fill = 0;
+	int overrun = 0;
+	int tempCount = 0;
+	int backLines = 0;
+
+	dataPacket data;
+	string sendString = "";
+
+
 	while(tempCount < 50)
 	{
+		backLines = 0;
+		cout << "\nMeasurement number: " << tempCount << '\n' << endl;
+
+		backLines += 2;
+#ifdef DEBUG_GYRO
+
+		fill = bmx055_Gyro.getFIFOFillStatus();
+		if(fill == -1)
+			cout << "BMX055_G FIFO fill get error: (" << fill << ')' << endl;
+
+		overrun = bmx055_Gyro.getFIFOOverrunStatus();
+		if(overrun == -1)
+			cout << "BMX055_G FIFO overrun get error: (" << overrun << ')' << endl;
+
+		cout << "Gyro Fill: " << fill << endl;
+		if(fill >= 1)
+		{
+			if(fill > 100)
+				fill = 100;
+
+			BMX055_G::gyrData tempData[100];
+
+			res = bmx055_Gyro.getFIFOData(tempData, fill);
+			if(res == -1)
+				cout << "BMX055_G FIFO data get error: (" << res << ')' << endl;
+
+			//clock_gettime(CLOCK_PROCESS_CPUTIME_ID, &ts);
+
+			for(int i = 0; i < fill; i++)
+			{
+				sendString = to_string(tempData[i].XAxis) + ", " + to_string(tempData[i].YAxis) + ", " + to_string(tempData[i].ZAxis);
+
+				data.id = ADDR_MAGN;
+				data.data = sendString;
+				data.time = "0";
+
+				prot.package(data, &output);
+				if(conn.sendDataTo(output, DEST_MAGN))
+				{
+					return(-1);
+				}
+			}
+
+			cout << "\x1b[2K";
+			cout << "X:" << tempData[fill-1].XAxis << "deg/s"
+			     << "\tY:" << tempData[fill-1].YAxis << "deg/s"
+			     << "\tZ:" << tempData[fill-1].ZAxis << "deg/s" << endl;
+		}
+		backLines += 2;
+
+#endif
+#ifdef DEBUG_ACCEL
+
+		fill = bmx055_Accel.getFIFOFillStatus();
+		if(fill == -1)
+			cout << "BMX055_A FIFO fill get error: (" << res << ')' << endl;
+		overrun = bmx055_Accel.getFIFOOverrunStatus();
+		if(overrun == -1)
+			cout << "BMX055_A FIFO overrun get error: (" << res << ')' << endl;
+
+		cout << "Accel Fill: " << fill << endl;
+		if(fill >= 1)
+		{
+			if(fill > 100)
+				fill = 100;
+
+			BMX055_A::accData tempData[100];
+
+			res = bmx055_Accel.getFIFOData(tempData, fill);
+			if(res == -1)
+				cout << "BMX055 FIFO data get error: (" << res << ')' << endl;
+
+			for(int i = 0; i < fill; i++)
+			{
+				sendString = to_string(tempData[i].XAxis) + ", " + to_string(tempData[i].YAxis) + ", " + to_string(tempData[i].ZAxis);
+
+				data.id = ADDR_ACCEL;
+				data.data = sendString;
+				data.time = "0";
+
+				prot.package(data, &output);
+				if(conn.sendDataTo(output, DEST_ACCEL))
+				{
+					return(-1);
+				}
+			}
+			cout << "\x1b[2K";
+			cout << "X:" << tempData[fill-1].XAxis << 'G'
+			     << "\tY:" << tempData[fill-1].YAxis << 'G'
+			     << "\tZ:" << tempData[fill-1].ZAxis << 'G' << endl;
+		}
+		backLines += 2;
+
+#endif
+#ifdef DEBUG_ATMO
+
+		res = bme280Handle.getMeasurementResults();
+		if(res != 0)
+			cout << "BME280 measurement get error: (" << res << ')' << endl;
+
+		cout << "\x1b[2K";
+		cout << bme280Handle.getLastTemperature() << "C\t"
+			<< bme280Handle.getLastPressure() << "Pa\t"
+			<< bme280Handle.getLastHumidity() << "%RH" << endl;
+
+		sendString = to_string(bme280Handle.getLastTemperature()) + ", " + to_string(bme280Handle.getLastPressure()) + ", " + to_string(bme280Handle.getLastHumidity());
+		data.id = ADDR_ATMO;
+		data.data = sendString;
+		data.time = "0";
+
+		prot.package(data, &output);
+		if(conn.sendDataTo(output, DEST_ATMO))
+		{
+			return(-1);
+		}
+
+		res = bme280Handle.takeMeasurement();
+		if(res != 0)
+			cout << "BME280 measurement error: (" << res << ')' << endl;
+
+		backLines += 1;
+
+#endif
+#ifdef DEBUG_MAGN
+
 		BMX055_M::magData tempData;
 
 		res = bmx055_Magn.getData(&tempData);
 		if(res != 0)
 			cout << "BMX055_M data get error: (" << res << ')' << endl;
 
+		cout << "\x1b[2K";
 		cout << "X: " << tempData.XAxis << "mT\tY: "
 			<< tempData.YAxis << "mT\tZ: "
 			<< tempData.ZAxis << "mT\t";
@@ -366,19 +416,31 @@ int main(int argc, char* argv[])
 			cout << "Overflow!";
 		cout << endl;
 
+		sendString = to_string(tempData.XAxis) + ", " + to_string(tempData.YAxis) + ", " + to_string(tempData.ZAxis);
+		data.id = ADDR_MAGN;
+		data.data = sendString;
+		data.time = "0";
 
-		tempCount++;
-		usleep(500000);
-	}
+		prot.package(data, &output);
+		if(conn.sendDataTo(output, DEST_MAGN))
+		{
+			return(-1);
+		}
 
 
+		backLines += 1;
 
-
-	//res = bmx055_Accel.setDataOutputFormat(ACC_F_BANDWIDTH_31_25HZ);
-	//if(res != 0)
-	//	cout << "BMX055 output format set error: (" << res << ')' << endl;
 
 #endif
+		cout << "\x1b[" << backLines + 1  << "A" << flush;
+		tempCount++;
+	}
+
+	for(int i = 0; i < backLines; i++)
+	{
+		cout << "\n";
+	}
+	cout << endl;
 
 	return(0);
 }
