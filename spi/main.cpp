@@ -22,8 +22,8 @@ using namespace std;
 #define DEBUG_MAGN
 
 #define ADDR_GYRO 6
-//#define DEST_GYRO "localhost:2222"
-#define DEST_GYRO "127.0.0.1:2222"
+#define DEST_GYRO "localhost:2222"
+//#define DEST_GYRO "127.0.0.1:2222"
 
 #define ADDR_ACCEL 7
 #define DEST_ACCEL "localhost:2222"
@@ -310,12 +310,12 @@ int main(int argc, char* argv[])
 			{
 				sendString = to_string(tempData[i].XAxis) + ", " + to_string(tempData[i].YAxis) + ", " + to_string(tempData[i].ZAxis);
 
-				data.id = ADDR_MAGN;
+				data.id = ADDR_GYRO;
 				data.data = sendString;
 				data.time = "0";
 
 				prot.package(data, &output);
-				if(conn.sendDataTo(output, DEST_MAGN))
+				if(conn.sendDataTo(output, DEST_GYRO))
 				{
 					return(-1);
 				}

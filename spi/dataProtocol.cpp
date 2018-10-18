@@ -12,7 +12,7 @@ typedef unsigned int uint;
 
 dataProtocol::~dataProtocol()
 {
-	 for ( unordered_map<int, dataIdentifier*>::iterator it = identifierMap.begin();
+	for ( unordered_map<int, dataIdentifier*>::iterator it = identifierMap.begin();
 		it != identifierMap.end();
 		it++ )
 	{

@@ -6,6 +6,7 @@
 #include <atomic>
 #include <iostream>
 #include <netinet/in.h>
+#include <unordered_map>
 
 #define BUFFER_LENGTH 1024
 
@@ -48,6 +49,8 @@ private:
 	int bufferLenght;
 	int recPort;
 	int concCon;
+
+	std::unordered_map<std::string, sockaddr_storage*> knownHosts;
 
 	std::atomic<int> ready;
 	std::thread reciveThread;

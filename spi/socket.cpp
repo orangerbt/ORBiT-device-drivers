@@ -36,6 +36,12 @@ udpSocketHandle::~udpSocketHandle()
 	}
 	delete curPtr;
 
+	for(unordered_map<std::string, sockaddr_storage*>::iterator it = knownHosts.begin();
+		it != knownHosts.end();
+		it++)
+	{
+		delete it->second; // remove all identifications before removing map
+	}
 }
 
 void udpSocketHandle::stopRecive()
@@ -50,9 +56,9 @@ void udpSocketHandle::stopRecive()
 
 void udpSocketHandle::initRecv()
 {
-	struct sockaddr_in serv_addr, cli_addr;
+	struct sockaddr_in6 serv_addr, cli_addr;
 
-	int sock = socket(AF_INET, SOCK_DGRAM, 0); //open socket SOCK_STREAM = TCP SOCK_DGRAM = UDP
+	int sock = socket(AF_INET6, SOCK_DGRAM, 0); //open socket SOCK_STREAM = TCP SOCK_DGRAM = UDP
 	if (sock == -1)
 	{
 		cerr << "Error opening socket!" << endl;
@@ -60,9 +66,9 @@ void udpSocketHandle::initRecv()
 		return;
 	}
 
-	serv_addr.sin_family = AF_INET;
-	serv_addr.sin_addr.s_addr = INADDR_ANY;
-	serv_addr.sin_port = htons(recPort);
+	serv_addr.sin6_family = AF_INET6;
+	serv_addr.sin6_addr = in6addr_any;
+	serv_addr.sin6_port = htons(recPort);
 
 	if(bind(sock, (struct sockaddr *) &serv_addr, sizeof(serv_addr)) == -1) //bind socket
 	{
@@ -221,13 +227,30 @@ int udpSocketHandle::sendDataTo(string data, string destination)
 {
 
 	//struct sockaddr cli_addr, serv_addr;
-	struct sockaddr_storage cli_data, serv_data;
-	struct sockaddr* cli_addr = ((struct sockaddr*)&cli_data);
+	struct sockaddr_storage serv_data;
+	struct sockaddr* cli_addr;// = ((struct sockaddr*)&cli_data);
 	struct sockaddr* serv_addr = ((struct sockaddr*)&serv_data);
 
-	if(getHostByName(destination, cli_addr))
+	//struct sockaddr_storage* pCliData;
+
+	bool newHost;
+
+	if(knownHosts.count(destination))
 	{
-		return(-1);
+		// host already exists
+		cli_addr = (struct sockaddr*)knownHosts[destination];
+		newHost = false;
+	}
+	else
+	{
+		//doesnt exist, query new
+		cli_addr = (struct sockaddr*)(new struct sockaddr_storage);
+		if(getHostByName(destination, cli_addr))
+		{
+			delete (struct sockaddr_storage*)cli_addr;
+			return(-1);
+		}
+		newHost = true;
 	}
 
 //	printSockaddr(cli_addr);
@@ -251,6 +274,8 @@ int udpSocketHandle::sendDataTo(string data, string destination)
 	int sock = socket(cli_addr->sa_family, SOCK_DGRAM, 0); //open socket SOCK_STREAM = TCP SOCK_DGRAM = UDP
 	if (sock == -1)
 	{
+		if(newHost)
+			delete (struct sockaddr_storage*)cli_addr;
 		cerr << "Error opening socket!" << endl;
 		return(-1);
 	}
@@ -261,22 +286,33 @@ int udpSocketHandle::sendDataTo(string data, string destination)
 		// set up sender addresses (namely make the system do it for us)
 		if(bind(sock, (struct sockaddr *) serv_addr, sizeof(struct sockaddr_in)) == -1) //bind socket
 		{
+			if(newHost)
+				delete (struct sockaddr_storage*)cli_addr;
 			cerr << "Error binding! (" << strerror(errno) << ")" << endl;
 			return(-1);
 		}
 		sendto(sock, data.c_str(), data.length(), 0, (struct sockaddr*) cli_addr, sizeof(sockaddr_in));
+		close(sock);
 		break;
 	case(AF_INET6):
 		// set up sender addresses (namely make the system do it for us)
 		if(bind(sock, (struct sockaddr *) serv_addr, sizeof(struct sockaddr_in6)) == -1) //bind socket
 		{
+			if(newHost)
+				delete (struct sockaddr_storage*)cli_addr;
 			cerr << "Error binding! (" << strerror(errno) << ")" << endl;
 			return(-1);
 		}
 		sendto(sock, data.c_str(), data.length(), 0, (struct sockaddr*) cli_addr, sizeof(sockaddr_in6));
+		close(sock);
 		break;
 	}
 
+	// host was valid, add to map
+	if(newHost)
+	{
+		knownHosts[destination] = (struct sockaddr_storage*)cli_addr;
+	}
 	return(0);
 }
 
