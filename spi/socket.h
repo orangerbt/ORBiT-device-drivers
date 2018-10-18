@@ -34,11 +34,13 @@ public:
 
 	int getRecBufLevel();
 
+	void printSockaddr(struct sockaddr* input);
+
 private:
 	void initRecv();
 	int reciveData(int socket);
 
-	int getHostByName(std::string destination,struct  sockaddr* result);
+	int getHostByName(std::string destination, struct sockaddr* result);
 
 	int recBufferFill;
 	linkedString* bufferHead;
