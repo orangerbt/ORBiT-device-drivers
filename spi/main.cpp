@@ -1,6 +1,7 @@
 #include <iostream>
 #include <string>
 #include <cstring>
+#include <cstdio>
 #include <unistd.h>
 #include <sys/time.h>
 
@@ -33,6 +34,70 @@ using namespace std;
 
 #define ADDR_MAGN 9
 #define DEST_MAGN "localhost:2222"
+
+int timeDiff(timespec* initial, timespec* final, timespec* result)
+{
+	if(final->tv_sec > initial->tv_sec || (final->tv_sec == initial->tv_sec && final->tv_nsec >= initial->tv_nsec))
+	{
+		// final >= initial;
+		result->tv_sec = final->tv_sec - initial->tv_sec;
+
+		if(final->tv_nsec >= initial->tv_nsec)
+		{
+			result->tv_nsec = final->tv_nsec - initial->tv_nsec;
+		}
+		else
+		{
+			result->tv_nsec = 1000000000 - (initial->tv_nsec - final->tv_nsec);
+			result->tv_sec -= 1;
+		}
+		return(0);
+	}
+	timeDiff(final ,initial, result);
+	return(-1);
+}
+
+timespec divTime(timespec time, int denominator)
+{
+	timespec result;
+	if(denominator <= 0)
+	{
+		cout << "Error!!!!!!" << endl;
+		result.tv_sec = -1;
+		result.tv_nsec = -1;
+		return(result);
+	}
+	result.tv_sec = time.tv_sec / denominator;
+	result.tv_nsec = (time.tv_nsec / denominator) + ((time.tv_nsec % denominator) / denominator) * 10000000000;
+
+	if(result.tv_nsec < 0)
+	{
+		cout << "1st div: " << (time.tv_nsec / denominator) << endl;
+		cout << "remainder: " << time.tv_nsec % denominator << endl;
+		cout << "2nd div: " << (((time.tv_nsec % denominator) * 10000000000 ) / denominator) << endl;
+	}
+	return(result);
+}
+
+timespec addTime(timespec t1, timespec t2)
+{
+	timespec result;
+	result.tv_sec = t1.tv_sec + t2.tv_sec;
+	result.tv_nsec = t1.tv_nsec + t2.tv_nsec;
+	if(result.tv_nsec > 1000000000)
+	{
+		result.tv_nsec -= 1000000000;
+		result.tv_sec += 1;
+	}
+	return(result);
+}
+
+string printTime(timespec time)
+{
+	char buffer[100];
+	sprintf(buffer, "%lld.%.9ld", (long long)time.tv_sec, time.tv_nsec);
+	return(buffer);
+}
 
 int main(int argc, char* argv[])
 {
@@ -97,7 +162,7 @@ int main(int argc, char* argv[])
 
 	ident.id = ADDR_GYRO;
         ident.description = "Gyroscope 1";
-        ident.units = "deg/s";
+        ident.units = "X deg/s, Y deg/s, Z deg/s";
 
 	prot.package(ident, &output);
 	if(conn.sendDataTo(output, DEST_GYRO))
@@ -152,7 +217,7 @@ int main(int argc, char* argv[])
 
 	ident.id = ADDR_ACCEL;
         ident.description = "Accelerometer 1";
-        ident.units = "G";
+        ident.units = "X G, Y G, Z G";
 
 	prot.package(ident, &output);
 	if(conn.sendDataTo(output, DEST_ACCEL))
@@ -246,7 +311,7 @@ int main(int argc, char* argv[])
 
 	ident.id = ADDR_MAGN;
         ident.description = "Magnetometer 1";
-        ident.units = "mT";
+        ident.units = "X mT, Y mT, Z mT";
 
 	prot.package(ident, &output);
 	if(conn.sendDataTo(output, DEST_MAGN))
@@ -263,10 +328,6 @@ int main(int argc, char* argv[])
 // ********************************* Measurements start *********************************
 
 	// stuff about time, that might get used later
-	//timespec ts;
-	//clock_gettime(CLOCK_PROCESS_CPUTIME_ID, &ts);
-	//double lastTime = ts.tv_nsec;
-
 	int fill = 0;
 	int overrun = 0;
 	int tempCount = 0;
@@ -275,6 +336,19 @@ int main(int argc, char* argv[])
 	dataPacket data;
 	string sendString = "";
 
+	timespec ts;
+	clock_gettime(CLOCK_REALTIME, &ts);
+// define last time variables for data with multiple measurements
+#ifdef DEBUG_GYRO
+	timespec lastGyroTime;
+	lastGyroTime.tv_sec = ts.tv_sec;
+	lastGyroTime.tv_nsec = ts.tv_nsec;
+#endif
+#ifdef DEBUG_ACCEL
+	timespec lastAccelTime;
+	lastAccelTime.tv_sec = ts.tv_sec;
+	lastAccelTime.tv_nsec = ts.tv_nsec;
+#endif
 
 	while(tempCount < 50)
 	{
@@ -304,15 +378,29 @@ int main(int argc, char* argv[])
 			if(res == -1)
 				cout << "BMX055_G FIFO data get error: (" << res << ')' << endl;
 
-			//clock_gettime(CLOCK_PROCESS_CPUTIME_ID, &ts);
+			// set up time differences
+			clock_gettime(CLOCK_REALTIME, &ts);
+
+			timespec tempTime;
+			tempTime.tv_sec = ts.tv_sec;
+			tempTime.tv_nsec = ts.tv_nsec;
+
+			//cout << printTime(tempTime) << endl;
+
+			timespec timeDelta; // compute time intervall between readings
+			timeDiff(&lastGyroTime, &ts, &timeDelta);
+			timeDelta = divTime(timeDelta, fill);
 
 			for(int i = 0; i < fill; i++)
 			{
 				sendString = to_string(tempData[i].XAxis) + ", " + to_string(tempData[i].YAxis) + ", " + to_string(tempData[i].ZAxis);
 
+				tempTime = addTime(timeDelta, tempTime);
+				//cout << printTime(tempTime) << endl;
+
 				data.id = ADDR_GYRO;
 				data.data = sendString;
-				data.time = "0";
+				data.time = printTime(tempTime);
 
 				prot.package(data, &output);
 				if(conn.sendDataTo(output, DEST_GYRO))
@@ -320,6 +408,12 @@ int main(int argc, char* argv[])
 					return(-1);
 				}
 			}
+
+			lastGyroTime.tv_sec = ts.tv_sec;
+			lastGyroTime.tv_nsec = ts.tv_nsec;
+
+			clock_gettime(CLOCK_REALTIME, &ts);
+			timespec lastRecorded;
 
 			cout << "\x1b[2K";
 			cout << "X:" << tempData[fill-1].XAxis << "deg/s"
@@ -350,13 +444,25 @@ int main(int argc, char* argv[])
 			if(res == -1)
 				cout << "BMX055 FIFO data get error: (" << res << ')' << endl;
 
+			// set up time differences
+			clock_gettime(CLOCK_REALTIME, &ts);
+			timespec tempTime;
+			tempTime.tv_sec = ts.tv_sec;
+			tempTime.tv_nsec = ts.tv_nsec;
+
+			timespec timeDelta; // compute time intervall between readings
+			timeDiff(&lastAccelTime, &ts, &timeDelta);
+			timeDelta = divTime(timeDelta, fill);
+
 			for(int i = 0; i < fill; i++)
 			{
 				sendString = to_string(tempData[i].XAxis) + ", " + to_string(tempData[i].YAxis) + ", " + to_string(tempData[i].ZAxis);
 
+				tempTime = addTime(timeDelta, tempTime);
+
 				data.id = ADDR_ACCEL;
 				data.data = sendString;
-				data.time = "0";
+				data.time = printTime(tempTime);
 
 				prot.package(data, &output);
 				if(conn.sendDataTo(output, DEST_ACCEL))
@@ -364,6 +470,10 @@ int main(int argc, char* argv[])
 					return(-1);
 				}
 			}
+
+			lastAccelTime.tv_sec = ts.tv_sec;
+			lastAccelTime.tv_nsec = ts.tv_nsec;
+
 			cout << "\x1b[2K";
 			cout << "X:" << tempData[fill-1].XAxis << 'G'
 			     << "\tY:" << tempData[fill-1].YAxis << 'G'
@@ -384,9 +494,11 @@ int main(int argc, char* argv[])
 			<< bme280Handle.getLastHumidity() << "%RH" << endl;
 
 		sendString = to_string(bme280Handle.getLastTemperature()) + ", " + to_string(bme280Handle.getLastPressure()) + ", " + to_string(bme280Handle.getLastHumidity());
+		clock_gettime(CLOCK_REALTIME, &ts);
+
 		data.id = ADDR_ATMO;
 		data.data = sendString;
-		data.time = "0";
+		data.time = printTime(ts);
 
 		prot.package(data, &output);
 		if(conn.sendDataTo(output, DEST_ATMO))
@@ -417,10 +529,11 @@ int main(int argc, char* argv[])
 			cout << "Overflow!";
 		cout << endl;
 
+		clock_gettime(CLOCK_REALTIME, &ts);
 		sendString = to_string(tempData.XAxis) + ", " + to_string(tempData.YAxis) + ", " + to_string(tempData.ZAxis);
 		data.id = ADDR_MAGN;
 		data.data = sendString;
-		data.time = "0";
+		data.time = printTime(ts);
 
 		prot.package(data, &output);
 		if(conn.sendDataTo(output, DEST_MAGN))
