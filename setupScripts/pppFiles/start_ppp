@@ -1,0 +1,17 @@
+#!/bin/bash
+# /etc/init.d/start_ppp
+
+### BEGIN INIT INFO
+# Provides:          start_ppp
+# Required-Start:    $remote_fs $syslog
+# Required-Stop:     $remote_fs $syslog
+# Default-Start:     2 3 4 5
+# Default-Stop:      0 1 6
+# Short-Description: Start ppp at boot time
+# Description:       Enable service provided by ppp.
+### END INIT INFO
+
+
+if ! screen -list | grep -q "radioDialup"; then
+	screen -S radioDialup -d -m bash /etc/ppp/startup.sh
+fi
