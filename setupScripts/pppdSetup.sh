@@ -39,7 +39,7 @@ if [ $baseStation == 1 ]; then
 	cp ./pppFiles/optionsBase /etc/ppp/options
 	cp ./pppFiles/startupBase.sh /etc/ppp/startup.sh
 else
-	cp ./pppFiles/optionsRocekt /etc/ppp/options
+	cp ./pppFiles/optionsRocket /etc/ppp/options
 	cp ./pppFiles/startupRocket.sh /etc/ppp/startup.sh
 fi
 
