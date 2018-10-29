@@ -14,4 +14,4 @@ nocrtscts
 nocdtrcts
 
 /dev/ttyS4 19200
-#/dev/ttyUSB0 9600
+#/dev/ttyUSB0 19200

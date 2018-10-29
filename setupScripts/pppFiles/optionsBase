@@ -1,0 +1,17 @@
+#base config
+-detach
+
+local
+noauth
+debug
+dump
+lock
+
+#defaultroute 192.168.1.200:192.168.1.201
+proxyarp 192.168.1.201:192.168.1.200
+
+nocrtscts
+nocdtrcts
+
+#/dev/ttyS4 19200
+/dev/ttyUSB0 19200
