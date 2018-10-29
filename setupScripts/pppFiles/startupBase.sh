@@ -7,7 +7,7 @@ runpppd(){
 	done
 }
 
-radioProg --try-reset --set-serial-baud 19200
+radioProg -d /dev/ttyUSB0 --try-reset --set-serial-baud 19200
 
 if [ $? -eq 0 ]; then
 	runpppd
