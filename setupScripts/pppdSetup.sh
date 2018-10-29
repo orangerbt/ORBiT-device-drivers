@@ -33,12 +33,13 @@ fi
 apt-get update
 apt-get install ppp
 
-cp ./pppFiles/options /etc/ppp/
 cp ./pppFiles/radioProg /etc/ppp/
 
 if [ $baseStation == 1 ]; then
+	cp ./pppFiles/optionsBase /etc/ppp/options
 	cp ./pppFiles/startupBase.sh /etc/ppp/startup.sh
 else
+	cp ./pppFiles/optionsRocekt /etc/ppp/options
 	cp ./pppFiles/startupRocket.sh /etc/ppp/startup.sh
 fi
 
