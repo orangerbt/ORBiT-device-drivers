@@ -31,11 +31,22 @@ if [[ $baseStation == 1 ]] && [[ $rocket == 1 ]]; then
 fi
 
 
-#copy all device tree overlays into firmware directory
-cp ../dto/*.dtbo /lib/firmware/
+if [ $baseStation == 1 ]; then
+	#base station code
 
-#copy boot settings
-cp ./dtoFiles/uEnv.txt /boot/
+	#copy all device tree overlays into firmware directory
+	cp ../dto/*.dtbo /lib/firmware/
 
+	#copy boot settings
+	cp ./dtoFiles/uEnv.txt /boot/
+else
+	#rocket code
+
+	#copy all device tree overlays into firmware directory
+	cp ../dto/*.dtbo /lib/firmware/
+
+	#copy boot settings
+	cp ./dtoFiles/uEnv.txt /boot/
+fi
 
 echo Done!
