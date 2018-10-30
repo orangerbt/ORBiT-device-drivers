@@ -36,13 +36,13 @@ Provide interfaces with various SPI devices on BeagleBone capes as well as GPIO 
 
 * BMX055
   - Additional accelerometer functions
-    - tnterupt engines
+    - interupt engines
     - few-time non-volitile memory management
     - digital interfaces(I2C/3wire SPI)
     - offselts
     - interupts
   - Additional gyroscope functions
-    - tnterupt engines
+    - interupt engines
     - few-time non-volitile memory management
     - digital interfaces(I2C/3wire SPI)
     - offselts

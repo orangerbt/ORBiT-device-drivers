@@ -8,7 +8,11 @@ runpppd(){
 }
 
 sleep 30
+
+cd /etc/ppp/
 ./radioProg -d /dev/ttyS4 --try-reset --set-serial-baud 19200
+
+#/sbin/route add default gw 192.168.1.201
 
 if [ $? -eq 0 ]; then
 	runpppd
