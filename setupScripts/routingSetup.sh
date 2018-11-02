@@ -38,7 +38,6 @@ if [ $baseStation == 1 ]; then
 	iptables -t nat -A POSTROUTING -o eth0 -j MASQUERADE
 else
 	#rocket code
-	#sudo /sbin/route add default gw 192.168.1.201
 	sudo /sbin/route add default gw 192.168.1.201
 
 	sudo echo nameserver 8.8.8.8 >> /etc/resolv.conf

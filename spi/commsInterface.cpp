@@ -8,6 +8,7 @@ commsInterface::commsInterface()
 {
 	addressPins = nullptr;
 	curAddress = -1;
+	numPins = 0;
 }
 
 commsInterface::~commsInterface()

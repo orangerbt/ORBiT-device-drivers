@@ -13,7 +13,11 @@
 #include "BMX055_GYRO.h"
 #include "BMX055_MAGN.h"
 
+#include "configHandle.h"
+//#include "include/json.hpp"
+
 using namespace std;
+//using namespace nlohmann::json;
 
 #define deviceAddr "/dev/spidev1.0"
 
@@ -23,8 +27,8 @@ using namespace std;
 #define DEBUG_MAGN
 
 #define ADDR_GYRO 6
-#define DEST_GYRO "localhost:2222"
-//#define DEST_GYRO "127.0.0.1:2222"
+#define DEST_GYRO "localhost:2222" // will use any ip version
+//#define DEST_GYRO "127.0.0.1:2222" // will use ipv4
 
 #define ADDR_ACCEL 7
 #define DEST_ACCEL "localhost:2222"
@@ -34,6 +38,8 @@ using namespace std;
 
 #define ADDR_MAGN 9
 #define DEST_MAGN "localhost:2222"
+
+#define CONF_PATH "Config.json"
 
 int timeDiff(timespec* initial, timespec* final, timespec* result)
 {
@@ -62,7 +68,7 @@ timespec divTime(timespec time, int denominator)
 	timespec result;
 	if(denominator <= 0)
 	{
-		cout << "Error!!!!!!" << endl;
+		//cout << "Error!!!!!!" << endl;
 		result.tv_sec = -1;
 		result.tv_nsec = -1;
 		return(result);
@@ -101,14 +107,21 @@ string printTime(timespec time)
 
 int main(int argc, char* argv[])
 {
+	configHandle config;
 	commsInterface commsI;
+
+	if(config.loadFromFile(CONF_PATH) != 0)
+	{
+		cout << "Error opening config!" << endl;
+		return(-1);
+	}
 
 	int addressPins[] = {61, 86, 88};
 	int res = commsI.initialize(deviceAddr, 3, addressPins);
 	if(res != 0)
 	{
 		cout << "Error on initializing comms interface: (" << res << ')' << endl;
-		return(1);
+		return(-1);
 	}
 
 	udpSocketHandle conn;
