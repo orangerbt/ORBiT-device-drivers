@@ -13,28 +13,17 @@ public:
 	int loadFromFile(std::string filePath);
 	int loadFromString(std::string jsonString);
 
-//	int printSettings();
+	void printSettings();
 
-//	int getDevID(int dev);
-//	int getDevAddress(int dev);
-//	int getDevDesc(int dev);
+	int getDevID(int dev);
+	std::string getDevAddress(int dev);
+	std::string getDevDesc(int dev);
 
 private:
-
 	int initFromJson(nlohmann::json configJson);
 
-	int atmoID;
-	int gyroID;
-	int magnID;
-	int acceID;
+	int devID[4];
+	std::string devDestAddress[4];
+	std::string devDesc[4];
 
-	std::string atmoDestAddress;
-	std::string gyroDestAddress;
-	std::string magnDestAddress;
-	std::string acceDestAddress;
-
-	std::string atmoDesc;
-	std::string gyroDesc;
-	std::string magnDesc;
-	std::string acceDesc;
 };

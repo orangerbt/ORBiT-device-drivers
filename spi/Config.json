@@ -2,12 +2,29 @@
 	// Expected Sensors
 	"Atmospheric":
 	{
-		"ID": 4,
-		"Desc": "Accelerometer1",
-		"Dest": "192.168.1.201:2222"
+		"ID": 6,
+		"Desc": "Atmospheric1",
+		//"Dest": "192.168.1.201:2222" // will use IPv4
+		"Dest": "localhost:2222" // may use IPv6
+
 		//TODO internal sensor settings
 	},
 	"Gyroscope":
 	{
+		"ID": 7,
+		"Desc": "Gyroscope1",
+		"Dest": "localhost:2222"
+	},
+	"Magnetometer":
+	{
+		"ID": 8,
+		"Desc": "Magnetometer1",
+		"Dest": "localhost:2222"
+	},
+	"Accelerometer":
+	{
+		"ID": 9,
+		"Desc": "Accelerometer1",
+		"Dest": "localhost:2222"
 	}
 }

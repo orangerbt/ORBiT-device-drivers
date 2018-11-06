@@ -26,18 +26,18 @@ using namespace std;
 #define DEBUG_ATMO
 #define DEBUG_MAGN
 
-#define ADDR_GYRO 6
-#define DEST_GYRO "localhost:2222" // will use any ip version
+//#define ADDR_GYRO 6
+//#define DEST_GYRO "localhost:2222" // will use any ip version
 //#define DEST_GYRO "127.0.0.1:2222" // will use ipv4
 
-#define ADDR_ACCEL 7
-#define DEST_ACCEL "localhost:2222"
+//#define ADDR_ACCEL 7
+//#define DEST_ACCEL "localhost:2222"
 
-#define ADDR_ATMO 8
-#define DEST_ATMO "localhost:2222"
+//#define ADDR_ATMO 8
+//#define DEST_ATMO "localhost:2222"
 
-#define ADDR_MAGN 9
-#define DEST_MAGN "localhost:2222"
+//#define ADDR_MAGN 9
+//#define DEST_MAGN "localhost:2222"
 
 #define CONF_PATH "Config.json"
 
@@ -116,6 +116,8 @@ int main(int argc, char* argv[])
 		return(-1);
 	}
 
+	config.printSettings();
+
 	int addressPins[] = {61, 86, 88};
 	int res = commsI.initialize(deviceAddr, 3, addressPins);
 	if(res != 0)
@@ -173,12 +175,12 @@ int main(int argc, char* argv[])
 		cout << "BMX055_G fast power set error: (" << res << ')' << endl;
 
 
-	ident.id = ADDR_GYRO;
-        ident.description = "Gyroscope 1";
-        ident.units = "X deg/s, Y deg/s, Z deg/s";
+	ident.id = config.getDevID(DEV_GYRO);
+	ident.description = config.getDevDesc(DEV_GYRO);
+	ident.units = "X deg/s, Y deg/s, Z deg/s";
 
 	prot.package(ident, &output);
-	if(conn.sendDataTo(output, DEST_GYRO))
+	if(conn.sendDataTo(output, config.getDevAddress(DEV_GYRO)))
 	{
 		return(-1);
 	}
@@ -228,12 +230,13 @@ int main(int argc, char* argv[])
 	if(res != 0)
 		cout << "BMX055_A powermode set error: (" << res << ')' << endl;
 
-	ident.id = ADDR_ACCEL;
-        ident.description = "Accelerometer 1";
+
+	ident.id = config.getDevID(DEV_ACCE);
+	ident.description = config.getDevDesc(DEV_ACCE);
         ident.units = "X G, Y G, Z G";
 
 	prot.package(ident, &output);
-	if(conn.sendDataTo(output, DEST_ACCEL))
+	if(conn.sendDataTo(output, config.getDevAddress(DEV_ACCE)))
 	{
 		return(-1);
 	}
@@ -276,12 +279,12 @@ int main(int argc, char* argv[])
 	if(res != 0)
 		cout << "BME280 ctrl_meas error: (" << res << ')' << endl;
 
-	ident.id = ADDR_ATMO;
-        ident.description = "Atmospheric probe 1";
+	ident.id = config.getDevID(DEV_ATMO);
+	ident.description = config.getDevDesc(DEV_ATMO);
         ident.units = "C, PA, %RH";
 
 	prot.package(ident, &output);
-	if(conn.sendDataTo(output, DEST_ATMO))
+	if(conn.sendDataTo(output, config.getDevAddress(DEV_ATMO)))
 	{
 		return(-1);
 	}
@@ -322,12 +325,12 @@ int main(int argc, char* argv[])
 	if(res != 0)
 		cout << "BMX055_M axes set error: (" << res << ')' << endl;
 
-	ident.id = ADDR_MAGN;
-        ident.description = "Magnetometer 1";
+	ident.id = config.getDevID(DEV_MAGN);
+	ident.description = config.getDevDesc(DEV_MAGN);
         ident.units = "X mT, Y mT, Z mT";
 
 	prot.package(ident, &output);
-	if(conn.sendDataTo(output, DEST_MAGN))
+	if(conn.sendDataTo(output, config.getDevAddress(DEV_MAGN)))
 	{
 		return(-1);
 	}
@@ -411,12 +414,12 @@ int main(int argc, char* argv[])
 				tempTime = addTime(timeDelta, tempTime);
 				//cout << printTime(tempTime) << endl;
 
-				data.id = ADDR_GYRO;
+				data.id = config.getDevID(DEV_GYRO);
 				data.data = sendString;
 				data.time = printTime(tempTime);
 
 				prot.package(data, &output);
-				if(conn.sendDataTo(output, DEST_GYRO))
+				if(conn.sendDataTo(output, config.getDevAddress(DEV_GYRO)))
 				{
 					return(-1);
 				}
@@ -473,12 +476,12 @@ int main(int argc, char* argv[])
 
 				tempTime = addTime(timeDelta, tempTime);
 
-				data.id = ADDR_ACCEL;
+				data.id = config.getDevID(DEV_ACCE);
 				data.data = sendString;
 				data.time = printTime(tempTime);
 
 				prot.package(data, &output);
-				if(conn.sendDataTo(output, DEST_ACCEL))
+				if(conn.sendDataTo(output, config.getDevAddress(DEV_ACCE)))
 				{
 					return(-1);
 				}
@@ -509,12 +512,12 @@ int main(int argc, char* argv[])
 		sendString = to_string(bme280Handle.getLastTemperature()) + ", " + to_string(bme280Handle.getLastPressure()) + ", " + to_string(bme280Handle.getLastHumidity());
 		clock_gettime(CLOCK_REALTIME, &ts);
 
-		data.id = ADDR_ATMO;
+		data.id = config.getDevID(DEV_ATMO);
 		data.data = sendString;
 		data.time = printTime(ts);
 
 		prot.package(data, &output);
-		if(conn.sendDataTo(output, DEST_ATMO))
+		if(conn.sendDataTo(output, config.getDevAddress(DEV_ATMO)))
 		{
 			return(-1);
 		}
@@ -544,12 +547,12 @@ int main(int argc, char* argv[])
 
 		clock_gettime(CLOCK_REALTIME, &ts);
 		sendString = to_string(tempData.XAxis) + ", " + to_string(tempData.YAxis) + ", " + to_string(tempData.ZAxis);
-		data.id = ADDR_MAGN;
+		data.id = config.getDevID(DEV_MAGN);
 		data.data = sendString;
 		data.time = printTime(ts);
 
 		prot.package(data, &output);
-		if(conn.sendDataTo(output, DEST_MAGN))
+		if(conn.sendDataTo(output, config.getDevAddress(DEV_MAGN)))
 		{
 			return(-1);
 		}
